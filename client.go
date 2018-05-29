@@ -1,6 +1,10 @@
 package uptimerobot
 
-import "net/http"
+import (
+	"encoding/json"
+	"net/http"
+	"net/url"
+)
 
 // HTTPClient represents an http.Client, or a mock equivalent.
 type HTTPClient interface {
@@ -33,5 +37,28 @@ func New(apiKey string) *Client {
 
 // GetAccountDetails returns an Account representing the account details.
 func (c *Client) GetAccountDetails() (Account, error) {
-	return Account{}, nil
+	u := &url.URL{
+		Scheme: "https",
+		Host:   "api.uptimerobot.com",
+		Path:   "getAccountDetails",
+	}
+	q := u.Query()
+	q.Set("apiKey", c.apiKey)
+	q.Set("format", "json")
+	q.Set("noJsonCallback", "1")
+	u.RawQuery = q.Encode()
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return Account{}, err
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return Account{}, err
+	}
+	defer resp.Body.Close()
+	a := Account{}
+	if err = json.NewDecoder(resp.Body).Decode(&a); err != nil {
+		return Account{}, err
+	}
+	return a, nil
 }
