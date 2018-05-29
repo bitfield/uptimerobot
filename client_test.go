@@ -8,12 +8,10 @@ import (
 )
 
 type MockHTTPClient struct {
-	called bool
 	DoFunc func(req *http.Request) (*http.Response, error)
 }
 
 func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	m.called = true
 	if m.DoFunc != nil {
 		return m.DoFunc(req)
 	}
@@ -31,23 +29,37 @@ func TestNew(t *testing.T) {
 
 func TestGetAccountDetails(t *testing.T) {
 	c := New("dummy")
-	want := "/getAccountDetails"
+	wantURL := "/getAccountDetails"
 	mockClient := MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
 
 			u := req.URL
-			if u.Path != want {
-				t.Errorf("GetAccountDetails called %q, want %q", u.Path, want)
+			if u.Path != wantURL {
+				t.Errorf("GetAccountDetails called %q, want %q", u.Path, wantURL)
 			}
 			return &http.Response{
 				StatusCode: http.StatusBadRequest,
-				Body:       ioutil.NopCloser(&bytes.Buffer{}),
+				Body: ioutil.NopCloser(bytes.NewBufferString(`{
+					"stat": "ok",
+					"account": {
+					  "email": "test@domain.com",
+					  "monitor_limit": 50,
+					  "monitor_interval": 1,
+					  "up_monitors": 1,
+					  "down_monitors": 0,
+					  "paused_monitors": 2
+					}
+				      }`)),
 			}, nil
 		},
 	}
 	c.http = &mockClient
-	c.GetAccountDetails()
-	if !mockClient.called {
-		t.Error("GetAccountDetails didn't make HTTP request")
+	a, err := c.GetAccountDetails()
+	if err != nil {
+		t.Error(err)
+	}
+	wantEmail := "test@domain.com"
+	if a.Email != wantEmail {
+		t.Errorf("GetAccountDetails() => email %q, want %q", a.Email, wantEmail)
 	}
 }

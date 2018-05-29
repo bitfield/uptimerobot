@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 // HTTPClient represents an http.Client, or a mock equivalent.
@@ -31,7 +32,7 @@ type Account struct {
 func New(apiKey string) *Client {
 	return &Client{
 		apiKey: apiKey,
-		http:   &http.Client{},
+		http:   &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
@@ -56,9 +57,12 @@ func (c *Client) GetAccountDetails() (Account, error) {
 		return Account{}, err
 	}
 	defer resp.Body.Close()
-	a := Account{}
-	if err = json.NewDecoder(resp.Body).Decode(&a); err != nil {
+	r := struct {
+		Stat    string  `json:"stat"`
+		Account Account `json:"account"`
+	}{}
+	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return Account{}, err
 	}
-	return a, nil
+	return r.Account, nil
 }
