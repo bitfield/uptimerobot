@@ -29,7 +29,7 @@ func TestNew(t *testing.T) {
 
 func TestGetAccountDetails(t *testing.T) {
 	c := New("dummy")
-	wantURL := "/getAccountDetails"
+	wantURL := "/v2/getAccountDetails"
 	mockClient := MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
 
@@ -42,12 +42,12 @@ func TestGetAccountDetails(t *testing.T) {
 				Body: ioutil.NopCloser(bytes.NewBufferString(`{
 					"stat": "ok",
 					"account": {
-					  "email": "test@domain.com",
-					  "monitor_limit": 50,
-					  "monitor_interval": 1,
-					  "up_monitors": 1,
-					  "down_monitors": 0,
-					  "paused_monitors": 2
+						"email": "test@domain.com",
+						"monitor_limit": 50,
+						"monitor_interval": 1,
+						"up_monitors": 1,
+						"down_monitors": 0,
+						"paused_monitors": 2
 					}
 				      }`)),
 			}, nil

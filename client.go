@@ -41,14 +41,14 @@ func (c *Client) GetAccountDetails() (Account, error) {
 	u := &url.URL{
 		Scheme: "https",
 		Host:   "api.uptimerobot.com",
-		Path:   "getAccountDetails",
+		Path:   "/v2/getAccountDetails",
 	}
 	q := u.Query()
-	q.Set("apiKey", c.apiKey)
+	q.Set("api_key", c.apiKey)
 	q.Set("format", "json")
 	q.Set("noJsonCallback", "1")
 	u.RawQuery = q.Encode()
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequest("POST", u.String(), nil)
 	if err != nil {
 		return Account{}, err
 	}
