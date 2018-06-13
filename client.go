@@ -2,8 +2,10 @@ package uptimerobot
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -16,6 +18,16 @@ type HTTPClient interface {
 type Client struct {
 	apiKey string
 	http   HTTPClient
+}
+
+// Error represents an API error.
+type Error map[string]interface{}
+
+// Respone represents an API response.
+type Response struct {
+	Stat    string  `json:"stat"`
+	Account Account `json:"account"`
+	Error   Error   `json:"error"`
 }
 
 // Account represents an UptimeRobot account.
@@ -43,12 +55,12 @@ func (c *Client) GetAccountDetails() (Account, error) {
 		Host:   "api.uptimerobot.com",
 		Path:   "/v2/getAccountDetails",
 	}
-	q := u.Query()
-	q.Set("api_key", c.apiKey)
-	q.Set("format", "json")
-	q.Set("noJsonCallback", "1")
-	u.RawQuery = q.Encode()
-	req, err := http.NewRequest("POST", u.String(), nil)
+	form := url.Values{}
+	form.Add("api_key", c.apiKey)
+	form.Add("format", "json")
+	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+
 	if err != nil {
 		return Account{}, err
 	}
@@ -60,9 +72,14 @@ func (c *Client) GetAccountDetails() (Account, error) {
 	r := struct {
 		Stat    string  `json:"stat"`
 		Account Account `json:"account"`
+		Error
 	}{}
 	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return Account{}, err
+	}
+	if r.Stat != "ok" {
+		e, _ := json.MarshalIndent(r.Error, "", " ")
+		return Account{}, fmt.Errorf("API error: %s", e)
 	}
 	return r.Account, nil
 }

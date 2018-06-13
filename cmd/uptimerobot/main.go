@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/bitfield/uptimerobot"
@@ -10,5 +11,9 @@ import (
 func main() {
 	apiKey := os.Args[1]
 	utr := uptimerobot.New(apiKey)
-	fmt.Println(utr.GetAccountDetails())
+	a, err := utr.GetAccountDetails()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(a)
 }
