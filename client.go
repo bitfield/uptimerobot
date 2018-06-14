@@ -40,6 +40,17 @@ type Account struct {
 	PausedMonitors  int    `json:"paused_monitors"`
 }
 
+// Monitor represents an UptimeRobot monitor.
+type Monitor struct {
+	ID           int64  `json:"id"`
+	FriendlyName string `json:"friendly_name"`
+	URL          string `json:"url"`
+	Type         int    `json:"type"`
+	SubType      string `json:"sub_type"`
+	KeywordType  string `json:"keyword_type"`
+	KeywordValue string `json:"keyword_value"`
+}
+
 // New takes an UptimeRobot API key and returns a Client pointer.
 func New(apiKey string) *Client {
 	return &Client{
@@ -82,4 +93,40 @@ func (c *Client) GetAccountDetails() (Account, error) {
 		return Account{}, fmt.Errorf("API error: %s", e)
 	}
 	return r.Account, nil
+}
+
+// GetMonitors returns a slice of Monitors representing the existing monitors.
+func (c *Client) GetMonitors() (monitors []Monitor, err error) {
+	u := &url.URL{
+		Scheme: "https",
+		Host:   "api.uptimerobot.com",
+		Path:   "/v2/getMonitors",
+	}
+	form := url.Values{}
+	form.Add("api_key", c.apiKey)
+	form.Add("format", "json")
+	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+
+	if err != nil {
+		return monitors, err
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return monitors, err
+	}
+	defer resp.Body.Close()
+	r := struct {
+		Stat     string    `json:"stat"`
+		Monitors []Monitor `json:"monitors"`
+		Error
+	}{}
+	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return monitors, err
+	}
+	if r.Stat != "ok" {
+		e, _ := json.MarshalIndent(r.Error, "", " ")
+		return monitors, fmt.Errorf("API error: %s", e)
+	}
+	return r.Monitors, nil
 }

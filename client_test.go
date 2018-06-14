@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 )
 
@@ -44,6 +45,16 @@ func fakeAccountDetailsHandler(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
+func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
+	data, err := os.Open("testdata/getMonitors.json")
+	if err != nil {
+		return nil, err
+	}
+	return &http.Response{
+		StatusCode: http.StatusBadRequest,
+		Body:       data,
+	}, nil
+}
 func TestGetAccountDetails(t *testing.T) {
 	c := New("dummy")
 	mockClient := MockHTTPClient{
@@ -57,5 +68,23 @@ func TestGetAccountDetails(t *testing.T) {
 	wantEmail := "test@domain.com"
 	if a.Email != wantEmail {
 		t.Errorf("GetAccountDetails() => email %q, want %q", a.Email, wantEmail)
+	}
+}
+
+func TestGetMonitors(t *testing.T) {
+	want := []string{"Google", "My Web Page"}
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakeGetMonitorsHandler,
+	}
+	c.http = &mockClient
+	monitors, err := c.GetMonitors()
+	if err != nil {
+		t.Error(err)
+	}
+	for i, m := range monitors {
+		if m.FriendlyName != want[i] {
+			t.Errorf("GetMonitors[%d] => %q, want %q", i, m.FriendlyName, want[i])
+		}
 	}
 }

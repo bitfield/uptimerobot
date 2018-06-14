@@ -1,0 +1,78 @@
+{
+    "stat": "ok",
+    "pagination": {
+        "offset": 0,
+        "limit": 50,
+        "total": 2
+    },
+    "monitors": [
+        {
+            "id": 777749809,
+            "friendly_name": "Google",
+            "url": "http://www.google.com",
+            "type": 1,
+            "sub_type": "",
+            "keyword_type": "",
+            "keyword_value": "",
+            "http_username": "",
+            "http_password": "",
+            "port": "",
+            "interval": 900,
+            "status": 1,
+            "create_datetime": 1462565497,
+            "monitor_group": 0,
+            "is_group_main": 0,
+            "logs": [
+                {
+                    "type": 98,
+                    "datetime": 1463540297,
+                    "duration": 1054134
+                }
+            ]
+        },
+        {
+            "id": 777712827,
+            "friendly_name": "My Web Page",
+            "url": "http://mywebpage.com/",
+            "type": 1,
+            "sub_type": "",
+            "keyword_type": "",
+            "keyword_value": "",
+            "http_username": "",
+            "http_password": "",
+            "port": "",
+            "interval": 60,
+            "status": 2,
+            "create_datetime": 1462465496,
+            "monitor_group": 0,
+            "is_group_main": 0,
+            "logs": [
+                {
+                    "type": 98,
+                    "datetime": 1462465202,
+                    "duration": 32
+                },
+                {
+                    "type": 1,
+                    "datetime": 1462465234,
+                    "duration": 490140
+                },
+                {
+                    "type": 2,
+                    "datetime": 1462955374,
+                    "duration": 85
+                },
+                {
+                    "type": 99,
+                    "datetime": 1462955588,
+                    "duration": 12
+                },
+                {
+                    "type": 98,
+                    "datetime": 1462955600,
+                    "duration": 22
+                }
+            ]
+        }
+    ]
+}
