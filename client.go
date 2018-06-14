@@ -25,9 +25,10 @@ type Error map[string]interface{}
 
 // Response represents an API response.
 type Response struct {
-	Stat    string  `json:"stat"`
-	Account Account `json:"account"`
-	Error   Error   `json:"error"`
+	Stat     string    `json:"stat"`
+	Account  Account   `json:"account"`
+	Monitors []Monitor `json:"monitors"`
+	Error    Error     `json:"error"`
 }
 
 // Account represents an UptimeRobot account.
@@ -61,46 +62,29 @@ func New(apiKey string) *Client {
 
 // GetAccountDetails returns an Account representing the account details.
 func (c *Client) GetAccountDetails() (Account, error) {
-	u := &url.URL{
-		Scheme: "https",
-		Host:   "api.uptimerobot.com",
-		Path:   "/v2/getAccountDetails",
-	}
-	form := url.Values{}
-	form.Add("api_key", c.apiKey)
-	form.Add("format", "json")
-	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
-	req.Header.Add("content-type", "application/x-www-form-urlencoded")
-
-	if err != nil {
+	r := Response{}
+	if err := c.makeAPICall("getAccountDetails", &r); err != nil {
 		return Account{}, err
-	}
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return Account{}, err
-	}
-	defer resp.Body.Close()
-	r := struct {
-		Stat    string  `json:"stat"`
-		Account Account `json:"account"`
-		Error
-	}{}
-	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return Account{}, err
-	}
-	if r.Stat != "ok" {
-		e, _ := json.MarshalIndent(r.Error, "", " ")
-		return Account{}, fmt.Errorf("API error: %s", e)
 	}
 	return r.Account, nil
 }
 
 // GetMonitors returns a slice of Monitors representing the existing monitors.
 func (c *Client) GetMonitors() (monitors []Monitor, err error) {
+	r := Response{}
+	if err := c.makeAPICall("getMonitors", &r); err != nil {
+		return monitors, err
+	}
+	return r.Monitors, nil
+}
+
+// makeAPICall calls the UptimeRobot API with the specified verb and stores the
+// returned data in the Response struct.
+func (c *Client) makeAPICall(verb string, r *Response) error {
 	u := &url.URL{
 		Scheme: "https",
 		Host:   "api.uptimerobot.com",
-		Path:   "/v2/getMonitors",
+		Path:   "/v2/" + verb,
 	}
 	form := url.Values{}
 	form.Add("api_key", c.apiKey)
@@ -109,24 +93,19 @@ func (c *Client) GetMonitors() (monitors []Monitor, err error) {
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	if err != nil {
-		return monitors, err
+		return err
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return monitors, err
+		return err
 	}
 	defer resp.Body.Close()
-	r := struct {
-		Stat     string    `json:"stat"`
-		Monitors []Monitor `json:"monitors"`
-		Error
-	}{}
 	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return monitors, err
+		return err
 	}
 	if r.Stat != "ok" {
 		e, _ := json.MarshalIndent(r.Error, "", " ")
-		return monitors, fmt.Errorf("API error: %s", e)
+		return fmt.Errorf("API error: %s", e)
 	}
-	return r.Monitors, nil
+	return nil
 }
