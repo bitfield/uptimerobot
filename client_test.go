@@ -27,31 +27,27 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func fakeAccountDetailsHandler(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusBadRequest,
+		Body: ioutil.NopCloser(bytes.NewBufferString(`{
+			"stat": "ok",
+			"account": {
+				"email": "test@domain.com",
+				"monitor_limit": 50,
+				"monitor_interval": 1,
+				"up_monitors": 1,
+				"down_monitors": 0,
+				"paused_monitors": 2
+			}
+		      }`)),
+	}, nil
+}
+
 func TestGetAccountDetails(t *testing.T) {
 	c := New("dummy")
-	wantURL := "/v2/getAccountDetails"
 	mockClient := MockHTTPClient{
-		DoFunc: func(req *http.Request) (*http.Response, error) {
-
-			u := req.URL
-			if u.Path != wantURL {
-				t.Errorf("GetAccountDetails called %q, want %q", u.Path, wantURL)
-			}
-			return &http.Response{
-				StatusCode: http.StatusBadRequest,
-				Body: ioutil.NopCloser(bytes.NewBufferString(`{
-					"stat": "ok",
-					"account": {
-						"email": "test@domain.com",
-						"monitor_limit": 50,
-						"monitor_interval": 1,
-						"up_monitors": 1,
-						"down_monitors": 0,
-						"paused_monitors": 2
-					}
-				      }`)),
-			}, nil
-		},
+		DoFunc: fakeAccountDetailsHandler,
 	}
 	c.http = &mockClient
 	a, err := c.GetAccountDetails()

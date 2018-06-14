@@ -23,7 +23,7 @@ type Client struct {
 // Error represents an API error.
 type Error map[string]interface{}
 
-// Respone represents an API response.
+// Response represents an API response.
 type Response struct {
 	Stat    string  `json:"stat"`
 	Account Account `json:"account"`
