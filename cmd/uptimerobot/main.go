@@ -11,9 +11,11 @@ import (
 func main() {
 	apiKey := os.Args[1]
 	utr := uptimerobot.New(apiKey)
-	a, err := utr.GetAccountDetails()
+	monitors, err := utr.GetMonitors()
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(a)
+	for _, m := range monitors {
+		fmt.Println(m.FriendlyName)
+	}
 }

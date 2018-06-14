@@ -48,8 +48,10 @@ type Monitor struct {
 	URL          string `json:"url"`
 	Type         int    `json:"type"`
 	SubType      string `json:"sub_type"`
-	KeywordType  string `json:"keyword_type"`
-	KeywordValue string `json:"keyword_value"`
+	// keyword_type is returned as either an integer or an empty string,
+	// which Go doesn't allow: https://github.com/golang/go/issues/22182
+	KeywordType  interface{} `json:"keyword_type"`
+	KeywordValue string      `json:"keyword_value"`
 }
 
 // New takes an UptimeRobot API key and returns a Client pointer.
@@ -100,6 +102,8 @@ func (c *Client) makeAPICall(verb string, r *Response) error {
 		return err
 	}
 	defer resp.Body.Close()
+	// body, err := ioutil.ReadAll(resp.Body)
+	// fmt.Println(string(body))
 	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return err
 	}
