@@ -55,6 +55,23 @@ func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
 		Body:       data,
 	}, nil
 }
+
+func fakeGetMonitorsBySearchHandler(req *http.Request) (*http.Response, error) {
+	var f string
+	if req.FormValue("search") != "" {
+		f = "testdata/getMonitorsBySearch.json"
+	} else {
+		f = "testdata/getMonitors.json"
+	}
+	data, err := os.Open(f)
+	if err != nil {
+		return nil, err
+	}
+	return &http.Response{
+		StatusCode: http.StatusBadRequest,
+		Body:       data,
+	}, nil
+}
 func TestGetAccountDetails(t *testing.T) {
 	c := New("dummy")
 	mockClient := MockHTTPClient{
@@ -86,5 +103,22 @@ func TestGetMonitors(t *testing.T) {
 		if m.FriendlyName != want[i] {
 			t.Errorf("GetMonitors[%d] => %q, want %q", i, m.FriendlyName, want[i])
 		}
+	}
+}
+
+func TestGetMonitorsBySearch(t *testing.T) {
+	want := "My Web Page"
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakeGetMonitorsBySearchHandler,
+	}
+	c.http = &mockClient
+	monitors, err := c.GetMonitorsBySearch(want)
+	if err != nil {
+		t.Error(err)
+	}
+	got := monitors[0].FriendlyName
+	if got != want {
+		t.Errorf("GetMonitorBySearch(%q) => %q", want, got)
 	}
 }

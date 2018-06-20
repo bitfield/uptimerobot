@@ -23,6 +23,9 @@ type Client struct {
 // Error represents an API error.
 type Error map[string]interface{}
 
+// Params holds optional parameters for API calls
+type Params map[string]string
+
 // Response represents an API response.
 type Response struct {
 	Stat     string    `json:"stat"`
@@ -65,7 +68,7 @@ func New(apiKey string) *Client {
 // GetAccountDetails returns an Account representing the account details.
 func (c *Client) GetAccountDetails() (Account, error) {
 	r := Response{}
-	if err := c.makeAPICall("getAccountDetails", &r); err != nil {
+	if err := c.MakeAPICall("getAccountDetails", &r, Params{}); err != nil {
 		return Account{}, err
 	}
 	return r.Account, nil
@@ -74,15 +77,28 @@ func (c *Client) GetAccountDetails() (Account, error) {
 // GetMonitors returns a slice of Monitors representing the existing monitors.
 func (c *Client) GetMonitors() (monitors []Monitor, err error) {
 	r := Response{}
-	if err := c.makeAPICall("getMonitors", &r); err != nil {
+	if err := c.MakeAPICall("getMonitors", &r, Params{}); err != nil {
 		return monitors, err
 	}
 	return r.Monitors, nil
 }
 
-// makeAPICall calls the UptimeRobot API with the specified verb and stores the
+// GetMonitorsBySearch returns a slice of Monitors whose FriendlyName or URL
+// match the search string.
+func (c *Client) GetMonitorsBySearch(s string) (monitors []Monitor, err error) {
+	r := Response{}
+	p := Params{
+		"search": s,
+	}
+	if err := c.MakeAPICall("getMonitors", &r, p); err != nil {
+		return monitors, err
+	}
+	return r.Monitors, nil
+}
+
+// MakeAPICall calls the UptimeRobot API with the specified verb and stores the
 // returned data in the Response struct.
-func (c *Client) makeAPICall(verb string, r *Response) error {
+func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
 	u := &url.URL{
 		Scheme: "https",
 		Host:   "api.uptimerobot.com",
@@ -91,6 +107,9 @@ func (c *Client) makeAPICall(verb string, r *Response) error {
 	form := url.Values{}
 	form.Add("api_key", c.apiKey)
 	form.Add("format", "json")
+	for k, v := range params {
+		form.Add(k, v)
+	}
 	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
