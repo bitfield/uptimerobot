@@ -72,6 +72,20 @@ func fakeGetMonitorsBySearchHandler(req *http.Request) (*http.Response, error) {
 		Body:       data,
 	}, nil
 }
+
+func fakeNewMonitorHandler(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body: ioutil.NopCloser(bytes.NewBufferString(`{
+			"stat": "ok",
+			"monitor": {
+				"id": 777810874,
+				"status": 1
+			}
+		      }`)),
+	}, nil
+}
+
 func TestGetAccountDetails(t *testing.T) {
 	c := New("dummy")
 	mockClient := MockHTTPClient{
@@ -120,5 +134,24 @@ func TestGetMonitorsBySearch(t *testing.T) {
 	got := monitors[0].FriendlyName
 	if got != want {
 		t.Errorf("GetMonitorBySearch(%q) => %q", want, got)
+	}
+}
+
+func TestNewMonitor(t *testing.T) {
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakeNewMonitorHandler,
+	}
+	c.http = &mockClient
+	want := Monitor{
+		FriendlyName: "My test monitor",
+		URL:          "http://example.com",
+	}
+	got, err := c.NewMonitor(want)
+	if err != nil {
+		t.Error(err)
+	}
+	if got.ID != 777810874 {
+		t.Errorf("NewMonitor() => ID %d, want 777810874", got.ID)
 	}
 }

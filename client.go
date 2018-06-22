@@ -4,20 +4,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
+
+// MonitorHTTP represents a "type 1" UptimeRobot monitor (a simple HTTP status check).
+const MonitorHTTP = 1
 
 // HTTPClient represents an http.Client, or a mock equivalent.
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// Client represents an UptimeRobot client.
+// Client represents an UptimeRobot client. Setting the Debug flag to true will
+// cause the client to print out the API requests it would make, without
+// actually making them.
 type Client struct {
 	apiKey string
 	http   HTTPClient
+	Debug  bool
 }
 
 // Error represents an API error.
@@ -31,6 +39,7 @@ type Response struct {
 	Stat     string    `json:"stat"`
 	Account  Account   `json:"account"`
 	Monitors []Monitor `json:"monitors"`
+	Monitor  Monitor   `json:"monitor"`
 	Error    Error     `json:"error"`
 }
 
@@ -100,6 +109,22 @@ func (c *Client) GetMonitorsBySearch(s string) (monitors []Monitor, err error) {
 	return r.Monitors, nil
 }
 
+// NewMonitor takes a Monitor and creates a new UptimeRobot monitor with the
+// specified details. It returns a Monitor with the ID field set to the ID of
+// the newly created monitor, or an error if the operation failed.
+func (c *Client) NewMonitor(m Monitor) (Monitor, error) {
+	r := Response{}
+	p := Params{
+		"friendly_name": m.FriendlyName,
+		"url":           m.URL,
+		"type":          strconv.Itoa(m.Type),
+	}
+	if err := c.MakeAPICall("newMonitor", &r, p); err != nil {
+		return Monitor{}, err
+	}
+	return r.Monitor, nil
+}
+
 // MakeAPICall calls the UptimeRobot API with the specified verb and stores the
 // returned data in the Response struct.
 func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
@@ -115,20 +140,25 @@ func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
 		form.Add(k, v)
 	}
 	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
-	req.Header.Add("content-type", "application/x-www-form-urlencoded")
-
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create HTTP request: %v", err)
+	}
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+	if c.Debug {
+		dump, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return fmt.Errorf("error dumping HTTP request: %v", err)
+		}
+		fmt.Printf("debug: %q\n", dump)
+		return nil
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("HTTP request failed: %v", err)
 	}
 	defer resp.Body.Close()
-	// body, err := ioutil.ReadAll(resp.Body)
-	// fmt.Println(string(body))
 	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return err
+		return fmt.Errorf("decoding error: %v", err)
 	}
 	if r.Stat != "ok" {
 		e, _ := json.MarshalIndent(r.Error, "", " ")
