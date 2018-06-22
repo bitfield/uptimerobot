@@ -30,7 +30,7 @@ func TestNew(t *testing.T) {
 
 func fakeAccountDetailsHandler(req *http.Request) (*http.Response, error) {
 	return &http.Response{
-		StatusCode: http.StatusBadRequest,
+		StatusCode: http.StatusOK,
 		Body: ioutil.NopCloser(bytes.NewBufferString(`{
 			"stat": "ok",
 			"account": {
@@ -51,7 +51,7 @@ func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	return &http.Response{
-		StatusCode: http.StatusBadRequest,
+		StatusCode: http.StatusOK,
 		Body:       data,
 	}, nil
 }
@@ -68,7 +68,7 @@ func fakeGetMonitorsBySearchHandler(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	return &http.Response{
-		StatusCode: http.StatusBadRequest,
+		StatusCode: http.StatusOK,
 		Body:       data,
 	}, nil
 }

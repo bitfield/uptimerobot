@@ -57,6 +57,10 @@ type Monitor struct {
 	KeywordValue string      `json:"keyword_value"`
 }
 
+func (m Monitor) String() string {
+	return fmt.Sprintf("%s: %s", m.FriendlyName, m.URL)
+}
+
 // New takes an UptimeRobot API key and returns a Client pointer.
 func New(apiKey string) *Client {
 	return &Client{
