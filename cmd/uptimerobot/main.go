@@ -11,14 +11,20 @@ import (
 
 func main() {
 	var apiKey = flag.String("api-key", "", "UptimeRobot API key")
-	var get = flag.String("get", "", "Return all monitors matching string")
+	var get = flag.String("get", "", "Return all monitors matching string (or 'all')")
 	flag.Parse()
 	if *apiKey == "" {
 		usageError("Please specify an UptimeRobot API key to use")
 	}
 	utr := uptimerobot.New(*apiKey)
 	if *get != "" {
-		monitors, err := utr.GetMonitorsBySearch(*get)
+		var monitors []uptimerobot.Monitor
+		var err error
+		if *get == "all" {
+			monitors, err = utr.GetMonitors()
+		} else {
+			monitors, err = utr.GetMonitorsBySearch(*get)
+		}
 		if err != nil {
 			log.Fatal(err)
 		}
