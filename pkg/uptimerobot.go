@@ -14,8 +14,13 @@ import (
 	"time"
 )
 
-// MonitorHTTP represents a "type 1" UptimeRobot monitor (a simple HTTP status check).
-const MonitorHTTP = 1
+// MonitorTypes maps an integer monitor type to the name of the monitor type.
+var MonitorTypes = map[int]string{
+	1: "HTTP",
+	2: "keyword",
+	3: "ping",
+	4: "port",
+}
 
 // HTTPClient represents an http.Client, or a mock equivalent.
 type HTTPClient interface {
@@ -64,7 +69,7 @@ Up monitors: {{ .UpMonitors }}
 Down monitors: {{ .DownMonitors }}
 Paused monitors: {{ .PausedMonitors }}`
 
-// String returns a pretty-printed version of the Account.
+// String returns a pretty-printed version of the account details.
 func (a Account) String() string {
 	return render(accountTemplate, a)
 }
@@ -84,7 +89,7 @@ Type: {{ .Type }}
 Status: {{ .Status }}
 Value: {{ .Value }}`
 
-// String returns a pretty-printed version of the Account.
+// String returns a pretty-printed version of the alert contact.
 func (a AlertContact) String() string {
 	return render(alertContactTemplate, a)
 }
@@ -105,13 +110,23 @@ type Monitor struct {
 const monitorTemplate = `ID: {{ .ID }}
 Name: {{ .FriendlyName }}
 URL: {{ .URL }}
-Type: {{ .Type }}
+Type: {{ .FriendlyType }}
 Subtype: {{ .SubType }}
 Keyword type: {{ .KeywordType }}
 Keyword value: {{ .KeywordValue }}`
 
+// String returns a pretty-printed version of the monitor.
 func (m Monitor) String() string {
 	return render(monitorTemplate, m)
+}
+
+// FriendlyType returns a human-readable name for the monitor type.
+func (m Monitor) FriendlyType() string {
+	name, ok := MonitorTypes[m.Type]
+	if !ok {
+		log.Fatalf("Unknown monitor type %d", m.Type)
+	}
+	return name
 }
 
 // New takes an UptimeRobot API key and returns a Client pointer.
@@ -231,4 +246,15 @@ func render(templateName string, value interface{}) string {
 		log.Fatal(err)
 	}
 	return output.String()
+}
+
+// MonitorType returns the monitor type number associated with the given type name.
+func MonitorType(t string) int {
+	for number, name := range MonitorTypes {
+		if name == t {
+			return number
+		}
+	}
+	log.Fatalf("unknown monitor type %q", t)
+	return 0
 }

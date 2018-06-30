@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var addCmd = &cobra.Command{
-	Use:   "add",
+var newCmd = &cobra.Command{
+	Use:   "new",
 	Short: "add a new monitor",
 	Long:  `Create a new monitor with the specified name and URL`,
 	Args:  cobra.MinimumNArgs(2),
@@ -18,7 +18,7 @@ var addCmd = &cobra.Command{
 		m := uptimerobot.Monitor{
 			URL:          args[0],
 			FriendlyName: args[1],
-			Type:         uptimerobot.MonitorHTTP,
+			Type:         uptimerobot.MonitorType("HTTP"),
 		}
 		new, err := utr.NewMonitor(m)
 		if err != nil {
@@ -29,5 +29,5 @@ var addCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(addCmd)
+	RootCmd.AddCommand(newCmd)
 }

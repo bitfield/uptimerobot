@@ -18,15 +18,6 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	}
 	return &http.Response{}, nil
 }
-func TestNew(t *testing.T) {
-	u := New("dummy")
-	if u == nil {
-		t.Error("New() => nil, want client object")
-	}
-	if u.apiKey != "dummy" {
-		t.Error("New() did not set API key on client")
-	}
-}
 
 func fakeAccountDetailsHandler(req *http.Request) (*http.Response, error) {
 	return &http.Response{
@@ -40,58 +31,6 @@ func fakeAccountDetailsHandler(req *http.Request) (*http.Response, error) {
 				"up_monitors": 1,
 				"down_monitors": 0,
 				"paused_monitors": 2
-			}
-		      }`)),
-	}, nil
-}
-
-func fakeGetAlertContactsHandler(req *http.Request) (*http.Response, error) {
-	data, err := os.Open("testdata/getAlertContacts.json")
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
-}
-
-func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
-	data, err := os.Open("testdata/getMonitors.json")
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
-}
-
-func fakeGetMonitorsBySearchHandler(req *http.Request) (*http.Response, error) {
-	var f string
-	if req.FormValue("search") != "" {
-		f = "testdata/getMonitorsBySearch.json"
-	} else {
-		f = "testdata/getMonitors.json"
-	}
-	data, err := os.Open(f)
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
-}
-
-func fakeNewMonitorHandler(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{
-			"stat": "ok",
-			"monitor": {
-				"id": 777810874,
-				"status": 1
 			}
 		      }`)),
 	}, nil
@@ -113,6 +52,16 @@ func TestGetAccountDetails(t *testing.T) {
 	}
 }
 
+func fakeGetAlertContactsHandler(req *http.Request) (*http.Response, error) {
+	data, err := os.Open("testdata/getAlertContacts.json")
+	if err != nil {
+		return nil, err
+	}
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       data,
+	}, nil
+}
 func TestGetAlertContacts(t *testing.T) {
 	want := []string{"John Doe", "My Twitter"}
 	c := New("dummy")
@@ -129,6 +78,17 @@ func TestGetAlertContacts(t *testing.T) {
 			t.Errorf("GetAlertContacts[%d] => %q, want %q", i, m.FriendlyName, want[i])
 		}
 	}
+}
+
+func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
+	data, err := os.Open("testdata/getMonitors.json")
+	if err != nil {
+		return nil, err
+	}
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       data,
+	}, nil
 }
 
 func TestGetMonitors(t *testing.T) {
@@ -149,6 +109,23 @@ func TestGetMonitors(t *testing.T) {
 	}
 }
 
+func fakeGetMonitorsBySearchHandler(req *http.Request) (*http.Response, error) {
+	var f string
+	if req.FormValue("search") != "" {
+		f = "testdata/getMonitorsBySearch.json"
+	} else {
+		f = "testdata/getMonitors.json"
+	}
+	data, err := os.Open(f)
+	if err != nil {
+		return nil, err
+	}
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       data,
+	}, nil
+}
+
 func TestGetMonitorsBySearch(t *testing.T) {
 	want := "My Web Page"
 	c := New("dummy")
@@ -166,6 +143,20 @@ func TestGetMonitorsBySearch(t *testing.T) {
 	}
 }
 
+func fakeNewMonitorHandler(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body: ioutil.NopCloser(bytes.NewBufferString(`{
+			"stat": "ok",
+			"monitor": {
+				"id": 777810874,
+				"status": 1,
+				"type": 1
+			}
+		      }`)),
+	}, nil
+}
+
 func TestNewMonitor(t *testing.T) {
 	c := New("dummy")
 	mockClient := MockHTTPClient{
@@ -175,6 +166,7 @@ func TestNewMonitor(t *testing.T) {
 	want := Monitor{
 		FriendlyName: "My test monitor",
 		URL:          "http://example.com",
+		Type:         MonitorType("HTTP"),
 	}
 	got, err := c.NewMonitor(want)
 	if err != nil {
