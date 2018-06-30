@@ -1,13 +1,16 @@
 package uptimerobot
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -52,6 +55,20 @@ type Account struct {
 	UpMonitors      int    `json:"up_monitors"`
 	DownMonitors    int    `json:"down_monitors"`
 	PausedMonitors  int    `json:"paused_monitors"`
+}
+
+// String returns a pretty-printed version of the Account.
+func (a Account) String() string {
+	var output bytes.Buffer
+	tmpl, err := template.ParseFiles("templates/account.tmpl")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = tmpl.ExecuteTemplate(&output, "account.tmpl", a)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return output.String()
 }
 
 // AlertContact represents an alert contact.
