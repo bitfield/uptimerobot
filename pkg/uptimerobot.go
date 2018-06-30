@@ -129,9 +129,9 @@ func (m Monitor) FriendlyType() string {
 	return name
 }
 
-// New takes an UptimeRobot API key and returns a Client pointer.
-func New(apiKey string) *Client {
-	return &Client{
+// New takes an UptimeRobot API key and returns a Client.
+func New(apiKey string) Client {
+	return Client{
 		apiKey: apiKey,
 		http:   &http.Client{Timeout: 10 * time.Second},
 	}
@@ -217,7 +217,7 @@ func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
 		if err != nil {
 			return fmt.Errorf("error dumping HTTP request: %v", err)
 		}
-		fmt.Printf("debug: %q\n", dump)
+		fmt.Printf("debug: %s\n\n", dump)
 		return nil
 	}
 	resp, err := c.http.Do(req)

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	uptimerobot "github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -13,8 +12,7 @@ var monitorCmd = &cobra.Command{
 	Short: "lists monitors",
 	Long:  `Lists all monitors associated with the account`,
 	Run: func(cmd *cobra.Command, args []string) {
-		utr := uptimerobot.New(apiKey)
-		monitors, err := utr.GetMonitors()
+		monitors, err := client.GetMonitors()
 		if err != nil {
 			log.Fatal(err)
 		}

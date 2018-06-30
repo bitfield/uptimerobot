@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	uptimerobot "github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -25,8 +26,13 @@ func Execute() {
 
 var apiKey string
 var debug bool
+var client uptimerobot.Client
 
 func init() {
+	cobra.OnInitialize(func() {
+		client = uptimerobot.New(apiKey)
+		client.Debug = debug
+	})
 	RootCmd.PersistentFlags().StringVar(&apiKey, "apiKey", "", "UptimeRobot API key")
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Debug mode (show API request without making it)")
 }

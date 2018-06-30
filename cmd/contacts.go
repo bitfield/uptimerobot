@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	uptimerobot "github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -13,8 +12,7 @@ var contactsCmd = &cobra.Command{
 	Short: "list alert contacts",
 	Long:  `Show all alert contacts associated with the account`,
 	Run: func(cmd *cobra.Command, args []string) {
-		utr := uptimerobot.New(apiKey)
-		contacts, err := utr.GetAlertContacts()
+		contacts, err := client.GetAlertContacts()
 		if err != nil {
 			log.Fatal(err)
 		}

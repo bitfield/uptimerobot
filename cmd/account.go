@@ -4,17 +4,15 @@ import (
 	"fmt"
 	"log"
 
-	uptimerobot "github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
 )
 
 var accountCmd = &cobra.Command{
 	Use:   "account",
 	Short: "get account details",
-	Long:  `Show the account details associated with the account`,
+	Long:  `Show the account details associated with the API key.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		utr := uptimerobot.New(apiKey)
-		account, err := utr.GetAccountDetails()
+		account, err := client.GetAccountDetails()
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -14,13 +14,12 @@ var newCmd = &cobra.Command{
 	Long:  `Create a new monitor with the specified name and URL`,
 	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		utr := uptimerobot.New(apiKey)
 		m := uptimerobot.Monitor{
 			URL:          args[0],
 			FriendlyName: args[1],
 			Type:         uptimerobot.MonitorType("HTTP"),
 		}
-		new, err := utr.NewMonitor(m)
+		new, err := client.NewMonitor(m)
 		if err != nil {
 			log.Fatal(err)
 		}
