@@ -45,6 +45,17 @@ func fakeAccountDetailsHandler(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
+func fakeGetAlertContactsHandler(req *http.Request) (*http.Response, error) {
+	data, err := os.Open("testdata/getAlertContacts.json")
+	if err != nil {
+		return nil, err
+	}
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       data,
+	}, nil
+}
+
 func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
 	data, err := os.Open("testdata/getMonitors.json")
 	if err != nil {
@@ -99,6 +110,24 @@ func TestGetAccountDetails(t *testing.T) {
 	wantEmail := "test@domain.com"
 	if a.Email != wantEmail {
 		t.Errorf("GetAccountDetails() => email %q, want %q", a.Email, wantEmail)
+	}
+}
+
+func TestGetAlertContacts(t *testing.T) {
+	want := []string{"John Doe", "My Twitter"}
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakeGetAlertContactsHandler,
+	}
+	c.http = &mockClient
+	contacts, err := c.GetAlertContacts()
+	if err != nil {
+		t.Error(err)
+	}
+	for i, m := range contacts {
+		if m.FriendlyName != want[i] {
+			t.Errorf("GetAlertContacts[%d] => %q, want %q", i, m.FriendlyName, want[i])
+		}
 	}
 }
 

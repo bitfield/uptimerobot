@@ -1,0 +1,23 @@
+
+{
+  "stat": "ok",
+  "limit": 50,
+  "offset": 0,
+  "total": 2,
+  "alert_contacts": [
+    {
+      "id": "0993765",
+      "friendly_name": "John Doe",
+      "type": 2,
+      "status": 1,
+      "value": "johndoe@gmail.com"
+    },
+    {
+      "id": "2403924",
+      "friendly_name": "My Twitter",
+      "type": 3,
+      "status": 0,
+      "value": "sampleTwitterAccount"
+    }
+  ]
+}

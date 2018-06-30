@@ -36,11 +36,12 @@ type Params map[string]string
 
 // Response represents an API response.
 type Response struct {
-	Stat     string    `json:"stat"`
-	Account  Account   `json:"account"`
-	Monitors []Monitor `json:"monitors"`
-	Monitor  Monitor   `json:"monitor"`
-	Error    Error     `json:"error"`
+	Stat          string         `json:"stat"`
+	Account       Account        `json:"account"`
+	Monitors      []Monitor      `json:"monitors"`
+	Monitor       Monitor        `json:"monitor"`
+	AlertContacts []AlertContact `json:"alert_contacts"`
+	Error         Error          `json:"error"`
 }
 
 // Account represents an UptimeRobot account.
@@ -51,6 +52,15 @@ type Account struct {
 	UpMonitors      int    `json:"up_monitors"`
 	DownMonitors    int    `json:"down_monitors"`
 	PausedMonitors  int    `json:"paused_monitors"`
+}
+
+// AlertContact represents an alert contact.
+type AlertContact struct {
+	ID           string `json:"id"`
+	FriendlyName string `json:"friendly_name"`
+	Type         int    `json:"type"`
+	Status       int    `json:"status"`
+	Value        string `json:"value"`
 }
 
 // Monitor represents an UptimeRobot monitor.
@@ -107,6 +117,15 @@ func (c *Client) GetMonitorsBySearch(s string) (monitors []Monitor, err error) {
 		return monitors, err
 	}
 	return r.Monitors, nil
+}
+
+// GetAlertContacts returns all the AlertContacts associated with the account.
+func (c *Client) GetAlertContacts() (contacts []AlertContact, err error) {
+	r := Response{}
+	if err := c.MakeAPICall("getAlertContacts", &r, Params{}); err != nil {
+		return contacts, err
+	}
+	return r.AlertContacts, nil
 }
 
 // NewMonitor takes a Monitor and creates a new UptimeRobot monitor with the

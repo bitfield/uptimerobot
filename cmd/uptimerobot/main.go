@@ -12,7 +12,7 @@ import (
 func main() {
 	var apiKey = flag.String("api-key", "", "UptimeRobot API key")
 	var debug = flag.Bool("debug", false, "Debug mode (show API request without making it)")
-	var get = flag.String("get", "", "Return all monitors matching string (or 'all')")
+	var get = flag.String("getMonitors", "", "Return all monitors matching string (or 'all')")
 	var new = flag.String("new", "", "Create a new monitor with specified name (requires '-url')")
 	var url = flag.String("url", "", "URL for new monitor check (used with '-new')")
 	flag.Parse()
