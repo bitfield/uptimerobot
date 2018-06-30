@@ -24,6 +24,7 @@ var searchCmd = &cobra.Command{
 		}
 		for _, m := range monitors {
 			fmt.Println(m)
+			fmt.Println()
 		}
 	},
 }

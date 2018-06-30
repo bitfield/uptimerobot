@@ -57,18 +57,16 @@ type Account struct {
 	PausedMonitors  int    `json:"paused_monitors"`
 }
 
+const accountTemplate = `Email: {{ .Email }}
+Monitor limit: {{ .MonitorLimit }}
+Monitor interval: {{ .MonitorInterval }}
+Up monitors: {{ .UpMonitors }}
+Down monitors: {{ .DownMonitors }}
+Paused monitors: {{ .PausedMonitors }}`
+
 // String returns a pretty-printed version of the Account.
 func (a Account) String() string {
-	var output bytes.Buffer
-	tmpl, err := template.ParseFiles("templates/account.tmpl")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = tmpl.ExecuteTemplate(&output, "account.tmpl", a)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return output.String()
+	return render(accountTemplate, a)
 }
 
 // AlertContact represents an alert contact.
@@ -78,6 +76,17 @@ type AlertContact struct {
 	Type         int    `json:"type"`
 	Status       int    `json:"status"`
 	Value        string `json:"value"`
+}
+
+const alertContactTemplate = `ID: {{ .ID }}
+Name: {{ .FriendlyName }}
+Type: {{ .Type }}
+Status: {{ .Status }}
+Value: {{ .Value }}`
+
+// String returns a pretty-printed version of the Account.
+func (a AlertContact) String() string {
+	return render(alertContactTemplate, a)
 }
 
 // Monitor represents an UptimeRobot monitor.
@@ -93,8 +102,16 @@ type Monitor struct {
 	KeywordValue string      `json:"keyword_value"`
 }
 
+const monitorTemplate = `ID: {{ .ID }}
+Name: {{ .FriendlyName }}
+URL: {{ .URL }}
+Type: {{ .Type }}
+Subtype: {{ .SubType }}
+Keyword type: {{ .KeywordType }}
+Keyword value: {{ .KeywordValue }}`
+
 func (m Monitor) String() string {
-	return fmt.Sprintf("%s: %s", m.FriendlyName, m.URL)
+	return render(monitorTemplate, m)
 }
 
 // New takes an UptimeRobot API key and returns a Client pointer.
@@ -201,4 +218,17 @@ func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
 		return fmt.Errorf("API error: %s", e)
 	}
 	return nil
+}
+
+func render(templateName string, value interface{}) string {
+	var output bytes.Buffer
+	tmpl, err := template.New("").Parse(templateName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = tmpl.Execute(&output, value)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return output.String()
 }
