@@ -176,3 +176,12 @@ func TestNewMonitor(t *testing.T) {
 		t.Errorf("NewMonitor() => ID %d, want 777810874", got.ID)
 	}
 }
+
+func TestBuildAlertContacts(t *testing.T) {
+	contacts := []string{"2353888", "0132759"}
+	want := "2353888_0_0-0132759_0_0"
+	got := buildAlertContactList(contacts)
+	if got != want {
+		t.Errorf("buildAlertContacts() => %q, want %q", got, want)
+	}
+}

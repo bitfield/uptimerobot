@@ -103,8 +103,9 @@ type Monitor struct {
 	SubType      string `json:"sub_type"`
 	// keyword_type is returned as either an integer or an empty string,
 	// which Go doesn't allow: https://github.com/golang/go/issues/22182
-	KeywordType  interface{} `json:"keyword_type"`
-	KeywordValue string      `json:"keyword_value"`
+	KeywordType   interface{} `json:"keyword_type"`
+	KeywordValue  string      `json:"keyword_value"`
+	AlertContacts []string    `json:"alert_contacts"`
 }
 
 const monitorTemplate = `ID: {{ .ID }}
@@ -183,9 +184,10 @@ func (c *Client) GetAlertContacts() (contacts []AlertContact, err error) {
 func (c *Client) NewMonitor(m Monitor) (Monitor, error) {
 	r := Response{}
 	p := Params{
-		"friendly_name": m.FriendlyName,
-		"url":           m.URL,
-		"type":          strconv.Itoa(m.Type),
+		"friendly_name":  m.FriendlyName,
+		"url":            m.URL,
+		"type":           strconv.Itoa(m.Type),
+		"alert_contacts": buildAlertContactList(m.AlertContacts),
 	}
 	if err := c.MakeAPICall("newMonitor", &r, p); err != nil {
 		return Monitor{}, err
@@ -257,4 +259,14 @@ func MonitorType(t string) int {
 	}
 	log.Fatalf("unknown monitor type %q", t)
 	return 0
+}
+
+// buildAlertContactList constructs a string in the right format to pass to the
+// 'new monitor' API to set alert contacts on a monitor.
+func buildAlertContactList(contactIDs []string) string {
+	contacts := make([]string, len(contactIDs))
+	for i, c := range contactIDs {
+		contacts[i] = c + "_0_0"
+	}
+	return strings.Join(contacts, "-")
 }
