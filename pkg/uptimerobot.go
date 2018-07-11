@@ -195,6 +195,20 @@ func (c *Client) NewMonitor(m Monitor) (Monitor, error) {
 	return r.Monitor, nil
 }
 
+// DeleteMonitor takes a Monitor with the ID field set, and deletes the
+// corresponding monitor. It returns a Monitor with the ID field set to the ID
+// of the deleted monitor, or an error if the operation failed.
+func (c *Client) DeleteMonitor(m Monitor) (Monitor, error) {
+	r := Response{}
+	p := Params{
+		"id": strconv.FormatInt(m.ID, 10),
+	}
+	if err := c.MakeAPICall("deleteMonitor", &r, p); err != nil {
+		return Monitor{}, err
+	}
+	return r.Monitor, nil
+}
+
 // MakeAPICall calls the UptimeRobot API with the specified verb and stores the
 // returned data in the Response struct.
 func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {

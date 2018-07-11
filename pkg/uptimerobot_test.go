@@ -177,6 +177,24 @@ func TestNewMonitor(t *testing.T) {
 	}
 }
 
+func TestDeleteMonitor(t *testing.T) {
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakeNewMonitorHandler,
+	}
+	c.http = &mockClient
+	want := Monitor{
+		ID: 777810874,
+	}
+	got, err := c.DeleteMonitor(want)
+	if err != nil {
+		t.Error(err)
+	}
+	if got.ID != want.ID {
+		t.Errorf("NewMonitor() => ID %d, want %d", got.ID, want.ID)
+	}
+}
+
 func TestBuildAlertContacts(t *testing.T) {
 	contacts := []string{"2353888", "0132759"}
 	want := "2353888_0_0-0132759_0_0"
