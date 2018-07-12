@@ -106,7 +106,7 @@ uptimerobot --apiKey XXX new https://www.example.com/ "Example.com website"
 New monitor created with ID 780689018
 ```
 
-To add alert contacts to the monitor, use the `-c` flag followed by a comma-separated list of contact IDs, with no spaces:
+To create a new monitor with alert contacts configured, use the `-c` flag followed by a comma-separated list of contact IDs, with no spaces:
 
 ```
 uptimerobot --apiKey XXX new -c 0102759,2053888 https://www.example.com/ "Example.com website"

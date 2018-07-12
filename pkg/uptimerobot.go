@@ -251,6 +251,8 @@ func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
 	return nil
 }
 
+// render takes a template and a data value, and returns the string result of
+// executing the template in the context of the value.
 func render(templateName string, value interface{}) string {
 	var output bytes.Buffer
 	tmpl, err := template.New("").Parse(templateName)
