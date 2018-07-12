@@ -55,7 +55,7 @@ The `uptimerobot contacts` command will list your configured alert contacts by I
 ```
 uptimerobot --apiKey XXX contacts
 ID: 0102759
-Name: j.random@example.com
+Name: Jay Random
 Type: 2
 Status: 2
 Value: j.random@example.com
@@ -110,7 +110,7 @@ To add alert contacts to the monitor, use the `-c` flag followed by a comma-sepa
 
 ```
 uptimerobot --apiKey XXX new -c 0102759,2053888 https://www.example.com/ "Example.com website"
-New monitor created with ID 780689018
+New monitor created with ID 780689019
 ```
 
 ## Using the Go library
@@ -195,5 +195,7 @@ For example, when deleting a monitor, as in the above example, the ID of the del
 ## Bugs and feature requests
 
 If you find a bug in the `uptimerobot` client or library, please [open an issue](https://github.com/bitfield/uptimerobot/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.
+
+Not all the functionality of the UptimeRobot API is implemented yet.
 
 Pull requests welcome!
