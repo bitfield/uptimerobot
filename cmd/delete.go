@@ -5,7 +5,7 @@ import (
 	"log"
 	"strconv"
 
-	uptimerobot "github.com/bitfield/uptimerobot/pkg"
+	"github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
 )
 

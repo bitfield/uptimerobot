@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	uptimerobot "github.com/bitfield/uptimerobot/pkg"
+	"github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +12,12 @@ import (
 var RootCmd = &cobra.Command{
 	Use:   "uptimerobot",
 	Short: "uptimerobot is a client for the UptimeRobot V2 API",
-	Long:  `Insert helpful text here`,
+	Long: `uptimerobot is a command-line client for the UptimeRobot monitoring
+service. It allows you to search for existing monitors, delete monitors,
+and create new monitors. You can also inspect your account details and
+any alert contacts you have configured.
+
+For more information, see https://github.com/bitfield/uptimerobot`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
