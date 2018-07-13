@@ -4,7 +4,7 @@ ADD . .
 ENV CGO_ENABLED=0
 RUN apk --no-cache add git ca-certificates && \
     go get -t . && \
-    go test && \
+    go test ./... && \
     go build -o /uptimerobot
 
 FROM scratch
