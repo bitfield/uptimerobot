@@ -39,7 +39,7 @@ type Client struct {
 // Error represents an API error.
 type Error map[string]interface{}
 
-// Params holds optional parameters for API calls
+// Params holds optional parameters for API calls.
 type Params map[string]string
 
 // Response represents an API response.
