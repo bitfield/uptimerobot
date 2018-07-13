@@ -10,6 +10,14 @@ To install the client binary, run:
 go get -u github.com/bitfield/uptimerobot
 ```
 
+## Running the command-line client in Docker
+
+To use the client in a Docker container, run:
+
+```
+docker container run bitfield/uptimerobot
+```
+
 ## Using the command-line client
 
 To see help on using the client, run:
