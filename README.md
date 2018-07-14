@@ -26,12 +26,45 @@ To see help on using the client, run:
 uptimerobot -h
 ```
 
+## Setting your API key
+
 To use the client with your UptimeRobot account, you will need the Main API Key for the account. Go to the [UptimeRobot Settings page](https://uptimerobot.com/dashboard.php#mySettings) and click 'Show/hide it' under the 'Main API Key' section.
 
-Copy the key to the clipboard and pass it to the `uptimerobot` client using the `--apiKey` flag like this (replace `XXX` with your own API key):
+There are three ways to pass your API key to the client: in a config file, in an enviroment variable, or on the command line.
+
+### In a config file
+
+The `uptimerobot` client will read a config file named `.uptimerobot.yaml` (or `.uptimerobot.json`, or any other extension that Viper supports) in your home directory, or in the current directory.
+
+For example, you can put your API key in the file `$HOME/.uptimerobot.yaml`, and `uptimerobot` will find and read it automatically (replace `XXX` with your own API key):
+
+```yaml
+apiKey: XXX
+```
+
+### In an environment variable
+
+`uptimerobot` will look for the API key in an environment variable named UPTIMEROBOT_APIKEY:
 
 ```
-uptimerobot --apiKey XXX account
+export UPTIMEROBOT_APIKEY=XXX
+uptimerobot ...
+```
+
+### On the command line
+
+You can also pass your API key to the `uptimerobot` client using the `--apiKey` flag like this:
+
+```
+uptimerobot --apiKey XXX ...
+```
+
+## Testing your configuration
+
+To test that your API key is correct and `uptimerobot` is reading it properly, run:
+
+```
+uptimerobot account
 ```
 
 You should see your account details listed:
@@ -61,7 +94,7 @@ If you get an error message, double-check you have the correct API key:
 The `uptimerobot contacts` command will list your configured alert contacts by ID number:
 
 ```
-uptimerobot --apiKey XXX contacts
+uptimerobot contacts
 ID: 0102759
 Name: Jay Random
 Type: 2
@@ -82,7 +115,7 @@ This will be useful when you create a new monitor, because you can add the conta
 Use `uptimerobot search` to list all monitors whose 'friendly name' or check URL match a certain string:
 
 ```
-uptimerobot --apiKey XXX search www.example.com
+uptimerobot search www.example.com
 ID: 780689017
 Name: Example.com website
 URL: https://www.example.com/
@@ -101,7 +134,7 @@ If there are no monitors found matching your search, the exit status of the comm
 Note the ID number of the monitor you want to delete, and run `uptimerobot delete`:
 
 ```
-uptimerobot --apiKey XXX delete 780689017
+uptimerobot delete 780689017
 Monitor ID 780689017 deleted
 ```
 
@@ -110,14 +143,14 @@ Monitor ID 780689017 deleted
 Run `uptimerobot new URL NAME` to create a new monitor:
 
 ```
-uptimerobot --apiKey XXX new https://www.example.com/ "Example.com website"
+uptimerobot new https://www.example.com/ "Example.com website"
 New monitor created with ID 780689018
 ```
 
 To create a new monitor with alert contacts configured, use the `-c` flag followed by a comma-separated list of contact IDs, with no spaces:
 
 ```
-uptimerobot --apiKey XXX new -c 0102759,2053888 https://www.example.com/ "Example.com website"
+uptimerobot new -c 0102759,2053888 https://www.example.com/ "Example.com website"
 New monitor created with ID 780689019
 ```
 

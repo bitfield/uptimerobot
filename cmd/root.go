@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // RootCmd represents the base command when called without any subcommands.
@@ -34,10 +36,21 @@ var debug bool
 var client uptimerobot.Client
 
 func init() {
+	viper.SetConfigName(".uptimerobot")
+	viper.AddConfigPath("$HOME")
+	viper.AddConfigPath(".")
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			log.Fatalf("failed to read config: %v\n", err)
+		}
+	}
+	viper.SetEnvPrefix("uptimerobot")
+	viper.AutomaticEnv()
 	cobra.OnInitialize(func() {
-		client = uptimerobot.New(apiKey)
+		client = uptimerobot.New(viper.GetString("apiKey"))
 		client.Debug = debug
 	})
 	RootCmd.PersistentFlags().StringVar(&apiKey, "apiKey", "", "UptimeRobot API key")
+	viper.BindPFlag("apiKey", RootCmd.PersistentFlags().Lookup("apiKey"))
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Debug mode (show API request without making it)")
 }
