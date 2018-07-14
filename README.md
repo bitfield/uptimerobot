@@ -127,7 +127,16 @@ Keyword value:
 
 (Use `uptimerobot monitors` to list all existing monitors.)
 
-If there are no monitors found matching your search, the exit status of the command will be 1. Otherwise it will be 0. This can be useful in automation scripts for checking whether or not a given monitor already exists.
+If there are no monitors found matching your search, the exit status of the command will be 1. Otherwise it will be 0. This can be useful in automation scripts for checking whether or not a given monitor already exists:
+
+```sh
+if uptimerobot search ${DOMAIN}; then
+  echo UptimeRobot check already exists for ${DOMAIN}, skipping.
+else
+  echo No UptimeRobot check found for ${DOMAIN}, adding.
+  uptimerobot new $DOMAIN $DOMAIN
+fi
+```
 
 ## Deleting monitors
 
