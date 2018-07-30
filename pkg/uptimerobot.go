@@ -28,9 +28,9 @@ type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// Client represents an UptimeRobot client. Setting the Debug flag to true will
-// cause the client to print out the API requests it would make, without
-// actually making them.
+// Client represents an UptimeRobot client. If the Debug field is set to
+// an io.Writer, then the client will dump API requests to it instead of
+// calling the real API.
 type Client struct {
 	apiKey string
 	http   HTTPClient
