@@ -48,7 +48,9 @@ func init() {
 	viper.AutomaticEnv()
 	cobra.OnInitialize(func() {
 		client = uptimerobot.New(viper.GetString("apiKey"))
-		client.Debug = debug
+		if debug {
+			client.Debug = os.Stdout
+		}
 	})
 	RootCmd.PersistentFlags().StringVar(&apiKey, "apiKey", "", "UptimeRobot API key")
 	viper.BindPFlag("apiKey", RootCmd.PersistentFlags().Lookup("apiKey"))

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -33,7 +34,7 @@ type HTTPClient interface {
 type Client struct {
 	apiKey string
 	http   HTTPClient
-	Debug  bool
+	Debug  io.Writer
 }
 
 // Error represents an API error.
@@ -228,12 +229,12 @@ func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
 		return fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
-	if c.Debug {
+	if c.Debug != nil {
 		dump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
 			return fmt.Errorf("error dumping HTTP request: %v", err)
 		}
-		fmt.Printf("debug: %s\n\n", dump)
+		fmt.Fprintln(c.Debug, string(dump))
 		return nil
 	}
 	resp, err := c.http.Do(req)

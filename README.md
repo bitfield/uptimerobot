@@ -244,6 +244,32 @@ type Response struct {
 
 For example, when deleting a monitor, as in the above example, the ID of the deleted monitor will be returned as `r.Monitor.ID`.
 
+If things aren't working as you expect, you can assign an `io.Writer` to `client.Debug` to receive debug output. If `client.Debug` is non-nil, `MakeAPICall()` will dump the HTTP request to it instead of making it for real:
+
+```go
+client.Debug = os.Stdout
+r := uptimerobot.Response{}
+p := uptimerobot.Params{
+    "frogurt": "cursed",
+}
+if err := client.MakeAPICall("monkeyPaw", &r, p); err != nil {
+    log.Fatal(err)
+}
+```
+
+outputs:
+
+```
+POST /v2/monkeyPaw HTTP/1.1
+Host: api.uptimerobot.com
+User-Agent: Go-http-client/1.1
+Content-Length: 52
+Content-Type: application/x-www-form-urlencoded
+Accept-Encoding: gzip
+
+api_key=XXX&format=json&frogurt=cursed
+```
+
 ## Bugs and feature requests
 
 If you find a bug in the `uptimerobot` client or library, please [open an issue](https://github.com/bitfield/uptimerobot/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -49,6 +50,24 @@ func TestGetAccountDetails(t *testing.T) {
 	wantEmail := "test@domain.com"
 	if a.Email != wantEmail {
 		t.Errorf("GetAccountDetails() => email %q, want %q", a.Email, wantEmail)
+	}
+}
+
+func TestDebugFlag(t *testing.T) {
+	c := New("dummy")
+	out := &bytes.Buffer{}
+	c.Debug = out
+	mockClient := MockHTTPClient{
+		DoFunc: fakeAccountDetailsHandler,
+	}
+	c.http = &mockClient
+	_, err := c.GetAccountDetails()
+	if err != nil {
+		t.Error("GetAccountDetails() returned non-nil in debug mode")
+	}
+	want := "POST /v2/getAccountDetails HTTP/1.1"
+	if !strings.Contains(out.String(), want) {
+		t.Errorf("GetAccountDetails() debugged %v, want %q ...", out.String(), want)
 	}
 }
 
@@ -201,5 +220,37 @@ func TestBuildAlertContacts(t *testing.T) {
 	got := buildAlertContactList(contacts)
 	if got != want {
 		t.Errorf("buildAlertContacts() => %q, want %q", got, want)
+	}
+}
+
+func TestRender(t *testing.T) {
+	input := Account{
+		Email:           "j.random@example.com",
+		MonitorLimit:    300,
+		MonitorInterval: 1,
+		UpMonitors:      208,
+		DownMonitors:    2,
+		PausedMonitors:  0,
+	}
+	want := `Email: j.random@example.com
+Monitor limit: 300
+Monitor interval: 1
+Up monitors: 208
+Down monitors: 2
+Paused monitors: 0`
+	got := render(accountTemplate, input)
+	if got != want {
+		t.Errorf("render(%q) = %q, want %q", input, got, want)
+	}
+}
+
+func TestFriendlyType(t *testing.T) {
+	m := Monitor{
+		Type: 1,
+	}
+	want := "HTTP"
+	got := m.FriendlyType()
+	if got != want {
+		t.Errorf("FriendlyType(1) = %q, want %q", got, want)
 	}
 }
