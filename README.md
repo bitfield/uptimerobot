@@ -1,3 +1,5 @@
+[![GoDoc](https://godoc.org/github.com/bitfield/uptimerobot?status.png)](http://godoc.org/github.com/bitfield/uptimerobot)[![Go Report Card](https://goreportcard.com/badge/github.com/bitfield/uptimerobot)](https://goreportcard.com/report/github.com/bitfield/uptimerobot)[![cover.run](https://cover.run/go/https:/github.com/bitfield/uptimerobot/pkg.svg?style=flat&tag=golang-1.10)](https://cover.run/go?tag=golang-1.10&repo=https%3A%2Fgithub.com%2Fbitfield%2Fuptimerobot%2Fpkg)
+
 # uptimerobot
 
 `uptimerobot` is a Go library and command-line client for the [UptimeRobot](https://uptimerobot.com/) website monitoring service. It allows you to search for existing monitors, delete monitors, create new monitors, and also inspect your account details and alert contacts.
