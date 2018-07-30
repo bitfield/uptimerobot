@@ -53,6 +53,27 @@ func TestGetAccountDetails(t *testing.T) {
 	}
 }
 
+func badAccountDetailsHandler(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body: ioutil.NopCloser(bytes.NewBufferString(`{
+			"stat": "false",
+			"error": {"message": "Somebody set up us the bomb"}}`)),
+	}, nil
+}
+
+func TestAPIErrorResponse(t *testing.T) {
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: badAccountDetailsHandler,
+	}
+	c.http = &mockClient
+	_, err := c.GetAccountDetails()
+	if err == nil {
+		t.Error("API call with error response returned non-nil error")
+	}
+}
+
 func TestDebugFlag(t *testing.T) {
 	c := New("dummy")
 	out := &bytes.Buffer{}
@@ -252,5 +273,20 @@ func TestFriendlyType(t *testing.T) {
 	got := m.FriendlyType()
 	if got != want {
 		t.Errorf("FriendlyType(1) = %q, want %q", got, want)
+	}
+}
+
+func TestStringMethods(t *testing.T) {
+	m := Monitor{Type: 1}
+	if m.String() == "" {
+		t.Error("m.String() = empty, want non-empty string")
+	}
+	a := Account{}
+	if a.String() == "" {
+		t.Error("a.String() = empty, want non-empty string")
+	}
+	c := AlertContact{}
+	if c.String() == "" {
+		t.Error("c.String() = empty, want non-empty string")
 	}
 }
