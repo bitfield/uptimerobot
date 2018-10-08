@@ -196,6 +196,26 @@ func (c *Client) NewMonitor(m Monitor) (Monitor, error) {
 	return r.Monitor, nil
 }
 
+// EnsureMonitor takes a Monitor and creates a new UptimeRobot monitor with the
+// specified details, if a monitor for the same URL does not already exist. It
+// returns a Monitor with the ID field set to the ID of the newly created
+// monitor or the existing monitor if it already existed, or an error if the
+// operation failed.
+func (c *Client) EnsureMonitor(m Monitor) (Monitor, error) {
+	monitors, err := c.GetMonitorsBySearch(m.URL)
+	if err != nil {
+		return Monitor{}, err
+	}
+	if len(monitors) == 0 {
+		new, err := c.NewMonitor(m)
+		if err != nil {
+			return Monitor{}, err
+		}
+		return new, nil
+	}
+	return monitors[0], nil
+}
+
 // DeleteMonitor takes a Monitor with the ID field set, and deletes the
 // corresponding monitor. It returns a Monitor with the ID field set to the ID
 // of the deleted monitor, or an error if the operation failed.

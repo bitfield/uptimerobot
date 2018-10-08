@@ -165,6 +165,21 @@ uptimerobot new -c 0102759,2053888 https://www.example.com/ "Example.com website
 New monitor created with ID 780689019
 ```
 
+## Ensuring a monitor exists
+
+Sometimes you want to create a new monitor only if a monitor doesn't already exist for the same URL. This is especially useful in automation.
+
+To do this, run `uptimerobot ensure URL NAME`:
+
+```
+uptimerobot ensure https://www.example.com/ "Example.com website"
+Monitor ID 780689018
+```
+
+If a monitor already existed for the same URL, its ID will be returned. Otherwise, a new monitor will be created, and its ID returned.
+
+You can use the `-c` flag to add alert contacts, just as for the `uptimerobot new` command.
+
 ## Using the Go library
 
 If the command-line client doesn't do quite what you need, or if you want to use UptimeRobot API access in your own programs, import the library using:
