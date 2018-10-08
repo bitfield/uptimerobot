@@ -217,6 +217,26 @@ func TestNewMonitor(t *testing.T) {
 	}
 }
 
+func TestEnsureMonitor(t *testing.T) {
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakeGetMonitorsBySearchHandler,
+	}
+	c.http = &mockClient
+	want := Monitor{
+		FriendlyName: "My Web Page",
+		URL:          "http://mywebpage.com",
+		Type:         MonitorType("HTTP"),
+	}
+	got, err := c.EnsureMonitor(want)
+	if err != nil {
+		t.Error(err)
+	}
+	if got.ID != 777712827 {
+		t.Errorf("EnsureMonitor() => ID %d, want 777712827", got.ID)
+	}
+}
+
 func TestDeleteMonitor(t *testing.T) {
 	c := New("dummy")
 	mockClient := MockHTTPClient{
