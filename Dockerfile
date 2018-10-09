@@ -1,9 +1,8 @@
-FROM golang:1.10-alpine as builder
-WORKDIR /go/src/github.com/bitfield/uptimerobot/
-ADD . .
+FROM golang:1.11-alpine AS builder
+WORKDIR /src/
+COPY . .
 ENV CGO_ENABLED=0
 RUN apk --no-cache add git ca-certificates && \
-    go get -t . && \
     go test ./... && \
     go build -o /uptimerobot
 
