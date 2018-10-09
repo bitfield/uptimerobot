@@ -29,5 +29,6 @@ var ensureCmd = &cobra.Command{
 }
 
 func init() {
+	ensureCmd.Flags().StringSliceVarP(&contacts, "contacts", "c", []string{}, "Comma-separated list of contact IDs to notify")
 	RootCmd.AddCommand(ensureCmd)
 }
