@@ -250,18 +250,26 @@ func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
 	}
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 	if c.Debug != nil {
-		dump, err := httputil.DumpRequestOut(req, true)
+		requestDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
 			return fmt.Errorf("error dumping HTTP request: %v", err)
 		}
-		fmt.Fprintln(c.Debug, string(dump))
-		return nil
+		fmt.Fprintln(c.Debug, string(requestDump))
+		fmt.Fprintln(c.Debug)
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return fmt.Errorf("HTTP request failed: %v", err)
 	}
 	defer resp.Body.Close()
+	if c.Debug != nil {
+		responseDump, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return fmt.Errorf("error dumping HTTP response: %v", err)
+		}
+		fmt.Fprintln(c.Debug, string(responseDump))
+		fmt.Fprintln(c.Debug)
+	}
 	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return fmt.Errorf("decoding error: %v", err)
 	}
