@@ -180,6 +180,14 @@ If a monitor already existed for the same URL, its ID will be returned. Otherwis
 
 You can use the `-c` flag to add alert contacts, just as for the `uptimerobot new` command.
 
+## Checking the version number
+
+To see what version of the command-line client you're using, run `uptimerobot version`.
+
+## Viewing debug output
+
+When things aren't going quite as they should, you can add the `--debug` flag to your command line to see a dump of the HTTP request and response from the server. This is helpful if you want to report problems with the client, for example.
+
 ## Using the Go library
 
 If the command-line client doesn't do quite what you need, or if you want to use UptimeRobot API access in your own programs, import the library using:
@@ -259,7 +267,7 @@ type Response struct {
 
 For example, when deleting a monitor, as in the above example, the ID of the deleted monitor will be returned as `r.Monitor.ID`.
 
-If things aren't working as you expect, you can assign an `io.Writer` to `client.Debug` to receive debug output. If `client.Debug` is non-nil, `MakeAPICall()` will dump the HTTP request to it instead of making it for real:
+If things aren't working as you expect, you can assign an `io.Writer` to `client.Debug` to receive debug output. If `client.Debug` is non-nil, `MakeAPICall()` will dump the HTTP request and response to it:
 
 ```go
 client.Debug = os.Stdout
@@ -283,6 +291,7 @@ Content-Type: application/x-www-form-urlencoded
 Accept-Encoding: gzip
 
 api_key=XXX&format=json&frogurt=cursed
+...
 ```
 
 ## Bugs and feature requests
