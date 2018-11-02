@@ -32,7 +32,7 @@ uptimerobot -h
 
 To use the client with your UptimeRobot account, you will need the Main API Key for the account. Go to the [UptimeRobot Settings page](https://uptimerobot.com/dashboard.php#mySettings) and click 'Show/hide it' under the 'Main API Key' section.
 
-There are three ways to pass your API key to the client: in a config file, in an enviroment variable, or on the command line.
+There are three ways to pass your API key to the client: in a config file, in an environment variable, or on the command line.
 
 ### In a config file
 
