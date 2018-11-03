@@ -97,12 +97,12 @@ func (a AlertContact) String() string {
 
 // Monitor represents an UptimeRobot monitor.
 type Monitor struct {
-	ID           int64  `json:"id"`
-	FriendlyName string `json:"friendly_name"`
-	URL          string `json:"url"`
-	Type         int    `json:"type"`
-	SubType      string `json:"sub_type"`
-	// keyword_type is returned as either an integer or an empty string,
+	ID           int64       `json:"id"`
+	FriendlyName string      `json:"friendly_name"`
+	URL          string      `json:"url"`
+	Type         int         `json:"type"`
+	SubType      interface{} `json:"sub_type"`
+	// keyword_type and sub_type are returned as either an integer or an empty string,
 	// which Go doesn't allow: https://github.com/golang/go/issues/22182
 	KeywordType   interface{} `json:"keyword_type"`
 	KeywordValue  string      `json:"keyword_value"`

@@ -132,7 +132,7 @@ func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
 }
 
 func TestGetMonitors(t *testing.T) {
-	want := []string{"Google", "My Web Page"}
+	want := []string{"Google", "My Web Page", "My FTP Server"}
 	c := New("dummy")
 	mockClient := MockHTTPClient{
 		DoFunc: fakeGetMonitorsHandler,
