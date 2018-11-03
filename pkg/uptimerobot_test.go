@@ -132,7 +132,12 @@ func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
 }
 
 func TestGetMonitors(t *testing.T) {
-	want := []string{"Google", "My Web Page", "My FTP Server"}
+	want := []string{
+		"Google",
+		"My Web Page",
+		"My FTP Server",
+		"PortTest",
+	}
 	c := New("dummy")
 	mockClient := MockHTTPClient{
 		DoFunc: fakeGetMonitorsHandler,
@@ -293,6 +298,30 @@ func TestFriendlyType(t *testing.T) {
 	got := m.FriendlyType()
 	if got != want {
 		t.Errorf("FriendlyType(1) = %q, want %q", got, want)
+	}
+}
+
+func TestFriendlySubType(t *testing.T) {
+	mHTTPS := Monitor{
+		Type: 4,
+		// SubType is interface{}, so numeric JSON values will be parsed
+		// as float64. Therefore, our test data must be float64.
+		SubType: 2.0,
+	}
+	wantHTTPS := "HTTPS (443)"
+	gotHTTPS := mHTTPS.FriendlySubType()
+	if gotHTTPS != wantHTTPS {
+		t.Errorf("FriendlySubType(HTTPS) = %q, want %q", gotHTTPS, wantHTTPS)
+	}
+	mCustom := Monitor{
+		Type:    4,
+		SubType: 99.0,
+		Port:    8080,
+	}
+	wantCustom := "Custom Port (8080)"
+	gotCustom := mCustom.FriendlySubType()
+	if gotCustom != wantCustom {
+		t.Errorf("FriendlySubType(Custom8080) = %q, want %q", gotCustom, wantCustom)
 	}
 }
 

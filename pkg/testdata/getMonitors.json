@@ -3,7 +3,7 @@
     "pagination": {
         "offset": 0,
         "limit": 50,
-        "total": 3
+        "total": 4
     },
     "monitors": [
         {
@@ -88,6 +88,21 @@
             "interval": 60,
             "status": 2,
             "create_datetime": 0
+        },
+        {
+            "id": 781397847,
+            "friendly_name": "PortTest",
+            "url": "mywebpage.com",
+            "type": 4,
+            "sub_type": 99,
+            "keyword_type": null,
+            "keyword_value": "",
+            "http_username": "",
+            "http_password": "",
+            "port": 8000,
+            "interval": 300,
+            "status": 1,
+            "create_datetime": 1541256390
         }
     ]
 }

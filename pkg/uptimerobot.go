@@ -23,6 +23,17 @@ var MonitorTypes = map[int]string{
 	4: "port",
 }
 
+// MonitorSubTypes maps a numeric monitor subtype to the name of the monitor subtype.
+var MonitorSubTypes = map[float64]string{
+	1:  "HTTP (80)",
+	2:  "HTTPS (443)",
+	3:  "FTP (21)",
+	4:  "SMTP (25)",
+	5:  "POP3 (110)",
+	6:  "IMAP (143)",
+	99: "Custom Port",
+}
+
 // HTTPClient represents an http.Client, or a mock equivalent.
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -97,14 +108,16 @@ func (a AlertContact) String() string {
 
 // Monitor represents an UptimeRobot monitor.
 type Monitor struct {
-	ID           int64       `json:"id"`
-	FriendlyName string      `json:"friendly_name"`
-	URL          string      `json:"url"`
-	Type         int         `json:"type"`
-	SubType      interface{} `json:"sub_type"`
-	// keyword_type and sub_type are returned as either an integer or an empty string,
-	// which Go doesn't allow: https://github.com/golang/go/issues/22182
+	ID           int64  `json:"id"`
+	FriendlyName string `json:"friendly_name"`
+	URL          string `json:"url"`
+	Type         int    `json:"type"`
+	// keyword_type, sub_type, and port are returned as either an integer
+	// (if set) or an empty string (if unset), which Go's JSON library won't
+	// parse for integer fields: https://github.com/golang/go/issues/22182
+	SubType       interface{} `json:"sub_type"`
 	KeywordType   interface{} `json:"keyword_type"`
+	Port          interface{} `json:"port"`
 	KeywordValue  string      `json:"keyword_value"`
 	AlertContacts []string    `json:"alert_contacts"`
 }
@@ -113,7 +126,7 @@ const monitorTemplate = `ID: {{ .ID }}
 Name: {{ .FriendlyName }}
 URL: {{ .URL }}
 Type: {{ .FriendlyType }}
-Subtype: {{ .SubType }}
+Subtype: {{ .FriendlySubType }}
 Keyword type: {{ .KeywordType }}
 Keyword value: {{ .KeywordValue }}`
 
@@ -127,6 +140,23 @@ func (m Monitor) FriendlyType() string {
 	name, ok := MonitorTypes[m.Type]
 	if !ok {
 		log.Fatalf("Unknown monitor type %d", m.Type)
+	}
+	return name
+}
+
+// FriendlySubType returns a human-readable name for the monitor subtype,
+// including the port number.
+func (m Monitor) FriendlySubType() string {
+	subType, ok := m.SubType.(float64)
+	if !ok {
+		return ""
+	}
+	name, ok := MonitorSubTypes[subType]
+	if !ok {
+		log.Fatalf("Unknown monitor subtype %d", m.SubType)
+	}
+	if name == "Custom Port" {
+		return fmt.Sprintf("%s (%v)", name, m.Port)
 	}
 	return name
 }
