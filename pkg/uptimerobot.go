@@ -127,7 +127,7 @@ Name: {{ .FriendlyName }}
 URL: {{ .URL }}
 Type: {{ .FriendlyType }}
 Subtype: {{ .FriendlySubType }}
-Keyword type: {{ .KeywordType }}
+Keyword type: {{ .FriendlyKeywordType }}
 Keyword value: {{ .KeywordValue }}`
 
 // String returns a pretty-printed version of the monitor.
@@ -139,7 +139,7 @@ func (m Monitor) String() string {
 func (m Monitor) FriendlyType() string {
 	name, ok := MonitorTypes[m.Type]
 	if !ok {
-		log.Fatalf("Unknown monitor type %d", m.Type)
+		return fmt.Sprintf("%v", m.Type)
 	}
 	return name
 }
@@ -153,12 +153,24 @@ func (m Monitor) FriendlySubType() string {
 	}
 	name, ok := MonitorSubTypes[subType]
 	if !ok {
-		log.Fatalf("Unknown monitor subtype %d", m.SubType)
+		return fmt.Sprintf("%v", m.SubType)
 	}
 	if name == "Custom Port" {
 		return fmt.Sprintf("%s (%v)", name, m.Port)
 	}
 	return name
+}
+
+// FriendlyKeywordType returns a human-readable name for the monitor keyword type.
+func (m Monitor) FriendlyKeywordType() string {
+	switch m.KeywordType {
+	case 1.0:
+		return "exists"
+	case 2.0:
+		return "not exists"
+	default:
+		return fmt.Sprintf("%v", m.KeywordType)
+	}
 }
 
 // New takes an UptimeRobot API key and returns a Client.

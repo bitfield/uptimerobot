@@ -325,6 +325,20 @@ func TestFriendlySubType(t *testing.T) {
 	}
 }
 
+func TestFriendlyKeywordType(t *testing.T) {
+	m := Monitor{
+		Type: 2,
+		// KeywordType is interface{}, so numeric JSON values will be parsed
+		// as float64. Therefore, our test data must be float64.
+		KeywordType: 1.0,
+	}
+	want := "exists"
+	got := m.FriendlyKeywordType()
+	if got != want {
+		t.Errorf("FriendlyKeywordType() = %q, want %q", got, want)
+	}
+}
+
 func TestStringMethods(t *testing.T) {
 	m := Monitor{Type: 1}
 	if m.String() == "" {
