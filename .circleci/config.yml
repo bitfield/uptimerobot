@@ -12,7 +12,8 @@ jobs:
       - checkout
       - run: docker build -t bitfield/uptimerobot:$CIRCLE_TAG -t bitfield/uptimerobot:latest .
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
-      - run: docker push bitfield/uptimerobot:$CIRCLE_TAG bitfield/uptimerobot:latest
+      - run: docker push bitfield/uptimerobot:$CIRCLE_TAG
+      - run: docker push bitfield/uptimerobot:latest
 workflows:
   version: 2
   test:
