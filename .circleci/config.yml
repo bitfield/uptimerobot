@@ -15,12 +15,12 @@ jobs:
       - run: docker push bitfield/uptimerobot:$CIRCLE_TAG bitfield/uptimerobot:latest
 workflows:
   version: 2
-  dockerbuild:
+  test:
     jobs:
       - test
+  dockerbuild:
+    jobs:
       - build_docker:
-          requires:
-            - test
           filters:
             branches:
               ignore: /.*/
