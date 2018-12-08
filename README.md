@@ -140,6 +140,22 @@ uptimerobot delete 780689017
 Monitor ID 780689017 deleted
 ```
 
+## Pausing or starting monitors
+
+Note the ID number of the monitor you want to pause, and run `uptimerobot pause`:
+
+```
+uptimerobot pause 780689017
+Monitor ID 780689017 paused
+```
+
+To resume a paused monitor, run `uptimerobot start` with the monitor ID:
+
+```
+uptimerobot start 780689017
+Monitor ID 780689017 started
+```
+
 ## Creating a new monitor
 
 Run `uptimerobot new URL NAME` to create a new monitor:
