@@ -34,6 +34,12 @@ var MonitorSubTypes = map[float64]string{
 	99: "Custom Port",
 }
 
+// StatusPause is the status value which sets a monitor to paused status when calling EditMonitor.
+var StatusPause = "0"
+
+// StatusResume is the status value which sets a monitor to resumed (unpaused) status when calling EditMonitor.
+var StatusResume = "1"
+
 // HTTPClient represents an http.Client, or a mock equivalent.
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -256,6 +262,37 @@ func (c *Client) EnsureMonitor(m Monitor) (Monitor, error) {
 		return new, nil
 	}
 	return monitors[0], nil
+}
+
+// PauseMonitor takes a Monitor with the ID field set, and attempts to set the
+// monitor status to paused via the API. It returns a Monitor with the ID field
+// set to the ID of the monitor, or an error if the operation failed.
+func (c *Client) PauseMonitor(m Monitor) (Monitor, error) {
+	r := Response{}
+	p := Params{
+		"id":     strconv.FormatInt(m.ID, 10),
+		"status": StatusPause,
+	}
+	if err := c.MakeAPICall("editMonitor", &r, p); err != nil {
+		return Monitor{}, err
+	}
+	return r.Monitor, nil
+}
+
+// StartMonitor takes a Monitor with the ID field set, and attempts to set the
+// monitor status to resumed (unpaused) via the API. It returns a Monitor with
+// the ID field set to the ID of the monitor, or an error if the operation
+// failed.
+func (c *Client) StartMonitor(m Monitor) (Monitor, error) {
+	r := Response{}
+	p := Params{
+		"id":     strconv.FormatInt(m.ID, 10),
+		"status": StatusResume,
+	}
+	if err := c.MakeAPICall("editMonitor", &r, p); err != nil {
+		return Monitor{}, err
+	}
+	return r.Monitor, nil
 }
 
 // DeleteMonitor takes a Monitor with the ID field set, and deletes the

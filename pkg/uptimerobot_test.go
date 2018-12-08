@@ -222,6 +222,56 @@ func TestNewMonitor(t *testing.T) {
 	}
 }
 
+func fakePauseMonitorHandler(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body: ioutil.NopCloser(bytes.NewBufferString(`{
+			"stat": "ok",
+			"monitor": {
+				"id": 677810870
+			}
+		      }`)),
+	}, nil
+}
+
+func TestPauseMonitor(t *testing.T) {
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakePauseMonitorHandler,
+	}
+	c.http = &mockClient
+	mon := Monitor{
+		ID: 677810870,
+	}
+	got, err := c.PauseMonitor(mon)
+	if err != nil {
+		t.Error(err)
+	}
+	if got.ID != mon.ID {
+		t.Errorf("PauseMonitor() => ID %d, want %d", got.ID, mon.ID)
+	}
+
+}
+
+func TestStartMonitor(t *testing.T) {
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakePauseMonitorHandler,
+	}
+	c.http = &mockClient
+	mon := Monitor{
+		ID: 677810870,
+	}
+	got, err := c.StartMonitor(mon)
+	if err != nil {
+		t.Error(err)
+	}
+	if got.ID != mon.ID {
+		t.Errorf("StartMonitor() => ID %d, want %d", got.ID, mon.ID)
+	}
+
+}
+
 func TestEnsureMonitor(t *testing.T) {
 	c := New("dummy")
 	mockClient := MockHTTPClient{
