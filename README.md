@@ -46,12 +46,14 @@ apiKey: XXX
 
 ### In an environment variable
 
-`uptimerobot` will look for the API key in an environment variable named UPTIMEROBOT_APIKEY:
+`uptimerobot` will look for the API key in an environment variable named UPTIMEROBOT_API_KEY:
 
 ```
-export UPTIMEROBOT_APIKEY=XXX
+export UPTIMEROBOT_API_KEY=XXX
 uptimerobot ...
 ```
+
+(For historical reasons, the variable can also be named `UPTIMEROBOT_APIKEY`.)
 
 ### On the command line
 
