@@ -196,6 +196,23 @@ func (c *Client) GetAccountDetails() (Account, error) {
 	return r.Account, nil
 }
 
+// GetMonitorByID takes an int64 representing the ID number of an existing monitor,
+// and returns the corresponding monitor with the rest of its metadata, or an
+// error if the operation failed.
+func (c *Client) GetMonitorByID(ID int64) (Monitor, error) {
+	r := Response{}
+	p := Params{
+		"monitors": fmt.Sprintf("%d", ID),
+	}
+	if err := c.MakeAPICall("getMonitors", &r, p); err != nil {
+		return Monitor{}, err
+	}
+	if len(r.Monitors) == 0 {
+		return Monitor{}, fmt.Errorf("monitor %d not found", ID)
+	}
+	return r.Monitors[0], nil
+}
+
 // GetMonitors returns a slice of Monitors representing the existing monitors.
 func (c *Client) GetMonitors() (monitors []Monitor, err error) {
 	r := Response{}

@@ -120,6 +120,33 @@ func TestGetAlertContacts(t *testing.T) {
 	}
 }
 
+func fakeGetMonitorByIDHandler(req *http.Request) (*http.Response, error) {
+	data, err := os.Open("testdata/getMonitorByID.json")
+	if err != nil {
+		return nil, err
+	}
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       data,
+	}, nil
+}
+
+func TestGetMonitorByID(t *testing.T) {
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakeGetMonitorByIDHandler,
+	}
+	c.http = &mockClient
+	var want int64 = 777749809
+	got, err := c.GetMonitorByID(want)
+	if err != nil {
+		t.Error(err)
+	}
+	if got.ID != want {
+		t.Errorf("GetMonitor() => ID %d, want %d", got.ID, want)
+	}
+}
+
 func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
 	data, err := os.Open("testdata/getMonitors.json")
 	if err != nil {
