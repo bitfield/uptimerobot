@@ -1,4 +1,4 @@
-[![GoDoc](https://godoc.org/github.com/bitfield/uptimerobot?status.png)](http://godoc.org/github.com/bitfield/uptimerobot)[![Go Report Card](https://goreportcard.com/badge/github.com/bitfield/uptimerobot)](https://goreportcard.com/report/github.com/bitfield/uptimerobot)[![cover.run](https://cover.run/go/https:/github.com/bitfield/uptimerobot/pkg.svg?style=flat&tag=golang-1.10)](https://cover.run/go?tag=golang-1.10&repo=https%3A%2Fgithub.com%2Fbitfield%2Fuptimerobot%2Fpkg)[![CircleCI](https://circleci.com/gh/bitfield/uptimerobot.svg?style=svg)](https://circleci.com/gh/bitfield/uptimerobot)
+[![GoDoc](https://godoc.org/github.com/bitfield/uptimerobot?status.png)](http://godoc.org/github.com/bitfield/uptimerobot)[![Go Report Card](https://goreportcard.com/badge/github.com/bitfield/uptimerobot)](https://goreportcard.com/report/github.com/bitfield/uptimerobot)[![CircleCI](https://circleci.com/gh/bitfield/uptimerobot.svg?style=svg)](https://circleci.com/gh/bitfield/uptimerobot)
 
 # uptimerobot
 
