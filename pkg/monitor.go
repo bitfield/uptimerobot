@@ -18,6 +18,7 @@ type Monitor struct {
 	Port          int      `json:"port"`
 	KeywordValue  string   `json:"keyword_value,omitempty"`
 	AlertContacts []string `json:"alert_contacts,omitempty"`
+	Status        Status   `json:"status"`
 }
 
 const monitorTemplate = `ID: {{ .ID }}
@@ -25,6 +26,7 @@ Name: {{ .FriendlyName }}
 URL: {{ .URL -}}
 {{ if .Port }}{{ printf "\nPort: %d" .Port }}{{ end -}}
 {{ if .Type }}{{ printf "\nType: %s" .FriendlyType }}{{ end -}}
+Status: {{ .Status }}
 {{ if .SubType }}{{ printf "\nSubtype: %s" .FriendlySubType }}{{ end -}}
 {{ if .KeywordType }}{{ printf "\nKeywordType: %s" .FriendlyKeywordType }}{{ end -}}
 {{ if .KeywordValue }}{{ printf "\nKeyword: %s" .KeywordValue }}{{ end }}`

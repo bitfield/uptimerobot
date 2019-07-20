@@ -49,3 +49,29 @@ const StatusPaused = 0
 // status when calling EditMonitor.
 const StatusResumed = 1
 
+type Status int
+
+const (
+	Up        Status = 2
+	Down      Status = 9
+	MaybeDown Status = 8
+	Unknown   Status = 1
+	Paused    Status = 0
+)
+
+func (s Status) String() string {
+	statuses := map[Status]string{
+		Up:        "Up",
+		Down:      "Down",
+		MaybeDown: "Maybe Down",
+		Unknown:   "Not Checked",
+		Paused:    "Paused",
+	}
+
+	statusString, ok := statuses[s]
+	if !ok {
+		return "Unknown Status"
+	}
+	return statusString
+
+} 
