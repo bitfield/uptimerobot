@@ -60,6 +60,13 @@ type Error map[string]interface{}
 // Params holds optional parameters for API calls.
 type Params map[string]string
 
+// Pagination represents the pagination info of an API response.
+type Pagination struct {
+	Offset int `json:"offset"`
+	Limit  int `json:"limit"`
+	Total  int `json:"total"`
+}
+
 // Response represents an API response.
 type Response struct {
 	Stat          string         `json:"stat"`
@@ -67,7 +74,8 @@ type Response struct {
 	Monitors      []Monitor      `json:"monitors"`
 	Monitor       Monitor        `json:"monitor"`
 	AlertContacts []AlertContact `json:"alert_contacts"`
-	Error         Error          `json:"error"`
+	Error         Error          `json:"error,omitempty"`
+	Pagination    Pagination     `json:"pagination"`
 }
 
 // Account represents an UptimeRobot account.
@@ -215,11 +223,82 @@ func (c *Client) GetMonitorByID(ID int64) (Monitor, error) {
 
 // GetMonitors returns a slice of Monitors representing the existing monitors.
 func (c *Client) GetMonitors() (monitors []Monitor, err error) {
-	r := Response{}
-	if err := c.MakeAPICall("getMonitors", &r, Params{}); err != nil {
-		return monitors, err
+	offset := 0
+	limit := 50
+
+	for {
+		r := Response{}
+		params := Params{
+			"offset": strconv.Itoa(offset),
+			"limit":  strconv.Itoa(limit),
+		}
+		if err := c.MakeAPICall("getMonitors", &r, params); err != nil {
+			break
+		}
+
+		monitors = append(monitors, r.Monitors...)
+
+		if r.Error != nil {
+			fmt.Println(fmt.Sprintf("%v", r.Error))
+			err = fmt.Errorf(fmt.Sprintf("%v", r.Error))
+			break
+		}
+		offset = r.Pagination.Offset + limit
+		total := r.Pagination.Total
+		condition := offset+limit < total
+		if !condition {
+			break
+		}
 	}
-	return r.Monitors, nil
+
+	return monitors, err
+}
+
+type GetMonitorsResponse struct {
+	Monitors chan Monitor
+	Error    chan error
+}
+
+func (c *Client) GetMonitorsChan() *GetMonitorsResponse {
+	out := GetMonitorsResponse{
+		make(chan Monitor),
+		make(chan error),
+	}
+	offset := 0
+	limit := 50
+
+	go func() {
+		defer close(out.Monitors)
+		for {
+			r := Response{}
+			params := Params{
+				"offset": strconv.Itoa(offset),
+				"limit":  strconv.Itoa(limit),
+			}
+			if err := c.MakeAPICall("getMonitors", &r, params); err != nil {
+				out.Error <- err
+				break
+			}
+
+			for _, m := range r.Monitors {
+				out.Monitors <- m
+			}
+
+			if r.Error != nil {
+				fmt.Println(fmt.Sprintf("%v", r.Error))
+				out.Error <- fmt.Errorf(fmt.Sprintf("%v", r.Error))
+				break
+			}
+			offset = r.Pagination.Offset + limit
+			total := r.Pagination.Total
+			condition := offset+limit < total
+			if !condition {
+				break
+			}
+		}
+	}()
+
+	return &out
 }
 
 // GetMonitorsBySearch returns a slice of Monitors whose FriendlyName or URL
