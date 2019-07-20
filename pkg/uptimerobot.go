@@ -268,7 +268,6 @@ func (c *Client) GetMonitors() (monitors []Monitor, err error) {
 		monitors = append(monitors, r.Monitors...)
 
 		if r.Error != nil {
-			fmt.Println(fmt.Sprintf("%v", r.Error))
 			err = fmt.Errorf(fmt.Sprintf("%v", r.Error))
 			break
 		}
@@ -314,7 +313,6 @@ func (c *Client) GetMonitorsChan() *GetMonitorsResponse {
 			}
 
 			if r.Error != nil {
-				fmt.Println(fmt.Sprintf("%v", r.Error))
 				out.Error <- fmt.Errorf(fmt.Sprintf("%v", r.Error))
 				break
 			}
