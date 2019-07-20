@@ -120,6 +120,33 @@ func (a AlertContact) String() string {
 	return render(alertContactTemplate, a)
 }
 
+type Status int
+
+const (
+	Up        Status = 2
+	Down      Status = 9
+	MaybeDown Status = 8
+	Unknown   Status = 1
+	Paused    Status = 0
+)
+
+func (s Status) String() string {
+	switch s {
+	case Up:
+		return "Up"
+	case Down:
+		return "Down"
+	case MaybeDown:
+		return "Maybe Down"
+	case Unknown:
+		return "Not Checked"
+	case Paused:
+		return "Paused"
+	default:
+		return "Unknown Status"
+	}
+}
+
 // Monitor represents an UptimeRobot monitor.
 type Monitor struct {
 	ID           int64  `json:"id"`
@@ -134,12 +161,14 @@ type Monitor struct {
 	Port          interface{} `json:"port"`
 	KeywordValue  string      `json:"keyword_value"`
 	AlertContacts []string    `json:"alert_contacts"`
+	Status        Status      `json:"status"`
 }
 
 const monitorTemplate = `ID: {{ .ID }}
 Name: {{ .FriendlyName }}
 URL: {{ .URL }}
 Type: {{ .FriendlyType }}
+Status: {{ .Status }}
 Subtype: {{ .FriendlySubType }}
 Keyword type: {{ .FriendlyKeywordType }}
 Keyword value: {{ .KeywordValue }}`
