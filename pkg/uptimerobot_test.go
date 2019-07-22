@@ -415,18 +415,3 @@ func TestFriendlyKeywordType(t *testing.T) {
 		t.Errorf("FriendlyKeywordType() = %q, want %q", got, want)
 	}
 }
-
-func TestStringMethods(t *testing.T) {
-	m := Monitor{Type: 1}
-	if m.String() == "" {
-		t.Error("m.String() = empty, want non-empty string")
-	}
-	a := Account{}
-	if a.String() == "" {
-		t.Error("a.String() = empty, want non-empty string")
-	}
-	c := AlertContact{}
-	if c.String() == "" {
-		t.Error("c.String() = empty, want non-empty string")
-	}
-}

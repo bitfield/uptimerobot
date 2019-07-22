@@ -114,15 +114,15 @@ func (a AlertContact) String() string {
 
 // Monitor represents an UptimeRobot monitor.
 type Monitor struct {
-	ID           int64  `json:"id"`
+	ID           int64  `json:"id,omitempty"`
 	FriendlyName string `json:"friendly_name"`
 	URL          string `json:"url"`
 	Type         int    `json:"type"`
 	// keyword_type, sub_type, and port are returned as either an integer
 	// (if set) or an empty string (if unset), which Go's JSON library won't
 	// parse for integer fields: https://github.com/golang/go/issues/22182
-	SubType       interface{} `json:"sub_type"`
-	KeywordType   interface{} `json:"keyword_type"`
+	SubType       interface{} `json:"sub_type,omitempty"`
+	KeywordType   interface{} `json:"keyword_type,omitempty"`
 	Port          interface{} `json:"port"`
 	KeywordValue  string      `json:"keyword_value"`
 	AlertContacts []string    `json:"alert_contacts"`
@@ -153,11 +153,7 @@ func (m Monitor) FriendlyType() string {
 // FriendlySubType returns a human-readable name for the monitor subtype,
 // including the port number.
 func (m Monitor) FriendlySubType() string {
-	subType, ok := m.SubType.(float64)
-	if !ok {
-		return ""
-	}
-	name, ok := MonitorSubTypes[subType]
+	name, ok := MonitorSubTypes[m.SubType.(float64)]
 	if !ok {
 		return fmt.Sprintf("%v", m.SubType)
 	}
@@ -253,6 +249,7 @@ func (c *Client) NewMonitor(m Monitor) (Monitor, error) {
 		"friendly_name":  m.FriendlyName,
 		"url":            m.URL,
 		"type":           strconv.Itoa(m.Type),
+		"sub_type":       fmt.Sprintf("%f", m.SubType),
 		"alert_contacts": buildAlertContactList(m.AlertContacts),
 	}
 	if err := c.MakeAPICall("newMonitor", &r, p); err != nil {
@@ -399,6 +396,17 @@ func MonitorType(t string) int {
 		}
 	}
 	log.Fatalf("unknown monitor type %q", t)
+	return 0
+}
+
+// MonitorSubType returns the monitor type number associated with the given type name.
+func MonitorSubType(t string) float64 {
+	for number, name := range MonitorSubTypes {
+		if name == t {
+			return number
+		}
+	}
+	log.Fatalf("unknown monitor subtype %q", t)
 	return 0
 }
 

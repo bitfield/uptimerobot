@@ -2,6 +2,7 @@ module github.com/bitfield/uptimerobot
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/google/go-cmp v0.3.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
