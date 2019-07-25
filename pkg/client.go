@@ -55,6 +55,13 @@ func New(apiKey string) Client {
 // Error represents an API error response.
 type Error map[string]interface{}
 
+// Pagination represents the pagination info of an API response.
+type Pagination struct {
+	Offset int `json:"offset"`
+	Limit  int `json:"limit"`
+	Total  int `json:"total"`
+}
+
 // Response represents an API response.
 type Response struct {
 	Stat          string         `json:"stat"`
@@ -62,7 +69,8 @@ type Response struct {
 	Monitors      []Monitor      `json:"monitors"`
 	Monitor       Monitor        `json:"monitor"`
 	AlertContacts []AlertContact `json:"alert_contacts"`
-	Error         Error          `json:"error"`
+	Error         Error          `json:"error,omitempty"`
+	Pagination    Pagination     `json:"pagination"`
 }
 
 // GetAccountDetails returns an Account representing the account details.
@@ -91,11 +99,34 @@ func (c *Client) GetMonitor(ID int64) (Monitor, error) {
 // AllMonitors returns a slice of Monitors representing the monitors currently
 // configured in your Uptime Robot account.
 func (c *Client) AllMonitors() (monitors []Monitor, err error) {
-	r := Response{}
-	if err := c.MakeAPICall("getMonitors", &r, []byte{}); err != nil {
-		return monitors, err
+	offset := 0
+	limit := 50
+
+	for {
+		r := Response{}
+		params := Params{
+			"offset": strconv.Itoa(offset),
+			"limit":  strconv.Itoa(limit),
+		}
+		if err := c.MakeAPICall("getMonitors", &r, params); err != nil {
+			break
+		}
+
+		monitors = append(monitors, r.Monitors...)
+
+		if r.Error != nil {
+			err = fmt.Errorf(fmt.Sprintf("%v", r.Error))
+			break
+		}
+		offset = r.Pagination.Offset + limit
+		total := r.Pagination.Total
+		condition := offset+limit < total
+		if !condition {
+			break
+		}
 	}
-	return r.Monitors, nil
+
+	return monitors, err
 }
 
 // SearchMonitors returns a slice of Monitors whose FriendlyName or URL
