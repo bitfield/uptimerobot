@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -96,34 +97,39 @@ func (c *Client) GetMonitor(ID int64) (Monitor, error) {
 	return r.Monitors[0], nil
 }
 
+const PageLimit = 50
+
 // AllMonitors returns a slice of Monitors representing the monitors currently
 // configured in your Uptime Robot account.
 func (c *Client) AllMonitors() (monitors []Monitor, err error) {
-	offset := 0
-	limit := 50
+	var (
+		offset        = 0
+		limit         = PageLimit
+		loopCondition = true
+	)
 
-	for {
+	for loopCondition {
 		r := Response{}
 		params := Params{
 			"offset": strconv.Itoa(offset),
 			"limit":  strconv.Itoa(limit),
 		}
 		if err := c.MakeAPICall("getMonitors", &r, params); err != nil {
-			break
+			return nil, err
 		}
 
 		monitors = append(monitors, r.Monitors...)
 
 		if r.Error != nil {
 			err = fmt.Errorf(fmt.Sprintf("%v", r.Error))
-			break
+			return nil, err
 		}
+
+		monitors = append(monitors, r.Monitors...)
+
 		offset = r.Pagination.Offset + limit
 		total := r.Pagination.Total
-		condition := offset+limit < total
-		if !condition {
-			break
-		}
+		loopCondition = (offset+limit < total)
 	}
 
 	return monitors, err
