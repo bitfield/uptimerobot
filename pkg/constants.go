@@ -49,8 +49,10 @@ const StatusPaused = 0
 // status when calling EditMonitor.
 const StatusResumed = 1
 
+// Status corresponds to the reported status of a monitor from the uptimerobot API
 type Status int
 
+// Status codes for each possible monitor status returned by uptimerobot
 const (
 	Up        Status = 2
 	Down      Status = 9
@@ -58,6 +60,14 @@ const (
 	Unknown   Status = 1
 	Paused    Status = 0
 )
+
+var statuses = map[Status]string{
+	Up:        "Up",
+	Down:      "Down",
+	MaybeDown: "Maybe Down",
+	Unknown:   "Not Checked",
+	Paused:    "Paused",
+}
 
 func (s Status) String() string {
 	statuses := map[Status]string{
@@ -74,4 +84,4 @@ func (s Status) String() string {
 	}
 	return statusString
 
-} 
+}
