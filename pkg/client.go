@@ -97,6 +97,7 @@ func (c *Client) GetMonitor(ID int64) (Monitor, error) {
 	return r.Monitors[0], nil
 }
 
+// PageLimit is the default limit for monitors returned per page.
 const PageLimit = 50
 
 // AllMonitors returns a slice of Monitors representing the monitors currently
@@ -129,7 +130,8 @@ func (c *Client) AllMonitors() (monitors []Monitor, err error) {
 
 		offset = r.Pagination.Offset + limit
 		total := r.Pagination.Total
-		loopCondition = (offset+limit < total)
+
+		loopCondition = offset < total
 	}
 
 	return monitors, err

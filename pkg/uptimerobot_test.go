@@ -2,6 +2,7 @@ package uptimerobot
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -212,6 +213,55 @@ func TestGetMonitorByID(t *testing.T) {
 	}
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
+	}
+}
+
+func fakeGetMonitorsPagingHandler(req *http.Request) (*http.Response, error) {
+	var (
+		data io.ReadCloser
+		err  error
+	)
+	req.ParseForm()
+	offset := req.PostForm.Get("offset")
+	if offset == "0" || offset == "" {
+		data, err = os.Open("testdata/getMonitorsPage1.json")
+	} else {
+		data, err = os.Open("testdata/getMonitorsPage2.json")
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       data,
+	}, nil
+}
+
+func TestGetMonitorsPages(t *testing.T) {
+	const (
+		baseName    = "monitor"
+		numMonitors = 100
+	)
+	want := make([]string, numMonitors)
+	for i := 0; i < numMonitors; i++ {
+		want[i] = fmt.Sprintf("%s-%d", baseName, i+1)
+	}
+	c := New("dummy")
+	mockClient := MockHTTPClient{
+		DoFunc: fakeGetMonitorsPagingHandler,
+	}
+	c.http = &mockClient
+	monitors, err := c.GetMonitors()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(monitors) != numMonitors {
+		t.Errorf("Wanted %d monitors, but got %d", numMonitors, len(monitors))
+	}
+	for i, m := range monitors {
+		if m.FriendlyName != want[i] {
+			t.Errorf("GetMonitors[%d] => %q, want %q", i, m.FriendlyName, want[i])
+		}
 	}
 }
 
