@@ -10,6 +10,7 @@ import (
 )
 
 func TestNewMonitor(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -49,6 +50,7 @@ func TestNewMonitor(t *testing.T) {
 }
 
 func TestGetAccountDetails(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
@@ -73,6 +75,7 @@ func TestGetAccountDetails(t *testing.T) {
 }
 
 func TestGetAlertContacts(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
@@ -99,6 +102,7 @@ func TestGetAlertContacts(t *testing.T) {
 }
 
 func TestGetMonitorByID(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
@@ -123,6 +127,7 @@ func TestGetMonitorByID(t *testing.T) {
 }
 
 func TestGetMonitors(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
@@ -154,6 +159,7 @@ func TestGetMonitors(t *testing.T) {
 }
 
 func TestGetMonitorsBySearch(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
@@ -179,6 +185,7 @@ func TestGetMonitorsBySearch(t *testing.T) {
 }
 
 func TestPauseMonitor(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
@@ -205,6 +212,7 @@ func TestPauseMonitor(t *testing.T) {
 }
 
 func TestStartMonitor(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
@@ -231,6 +239,7 @@ func TestStartMonitor(t *testing.T) {
 }
 
 func TestEnsureMonitor(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
@@ -259,6 +268,7 @@ func TestEnsureMonitor(t *testing.T) {
 }
 
 func TestDeleteMonitor(t *testing.T) {
+	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
@@ -285,6 +295,7 @@ func TestDeleteMonitor(t *testing.T) {
 }
 
 func TestBuildAlertContacts(t *testing.T) {
+	t.Parallel()
 	contacts := []string{"2353888", "0132759"}
 	want := "2353888_0_0-0132759_0_0"
 	got := buildAlertContactList(contacts)
@@ -294,6 +305,7 @@ func TestBuildAlertContacts(t *testing.T) {
 }
 
 func TestRender(t *testing.T) {
+	t.Parallel()
 	input := Account{
 		Email:           "j.random@example.com",
 		MonitorLimit:    300,
@@ -314,6 +326,7 @@ func TestRender(t *testing.T) {
 }
 
 func TestFriendlyType(t *testing.T) {
+	t.Parallel()
 	m := Monitor{
 		Type: 1,
 	}
@@ -325,6 +338,7 @@ func TestFriendlyType(t *testing.T) {
 }
 
 func TestFriendlySubType(t *testing.T) {
+	t.Parallel()
 	mHTTPS := Monitor{
 		Type: 4,
 		// SubType is interface{}, so numeric JSON values will be parsed
@@ -349,6 +363,7 @@ func TestFriendlySubType(t *testing.T) {
 }
 
 func TestFriendlyKeywordType(t *testing.T) {
+	t.Parallel()
 	m := Monitor{
 		Type: 2,
 		// KeywordType is interface{}, so numeric JSON values will be parsed
