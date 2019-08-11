@@ -1,0 +1,11 @@
+{
+  "stat": "ok",
+  "account": {
+    "email": "test@domain.com",
+    "monitor_limit": 50,
+    "monitor_interval": 1,
+    "up_monitors": 1,
+    "down_monitors": 0,
+    "paused_monitors": 2
+  }
+}

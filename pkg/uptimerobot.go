@@ -40,17 +40,13 @@ var StatusPause = "0"
 // StatusResume is the status value which sets a monitor to resumed (unpaused) status when calling EditMonitor.
 var StatusResume = "1"
 
-// HTTPClient represents an http.Client, or a mock equivalent.
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 // Client represents an UptimeRobot client. If the Debug field is set to
 // an io.Writer, then the client will dump API requests to it instead of
 // calling the real API.
 type Client struct {
 	apiKey string
-	http   HTTPClient
+	http   *http.Client
+	URL    string
 	Debug  io.Writer
 }
 
@@ -326,18 +322,14 @@ func (c *Client) DeleteMonitor(m Monitor) (Monitor, error) {
 // MakeAPICall calls the UptimeRobot API with the specified verb and stores the
 // returned data in the Response struct.
 func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
-	u := &url.URL{
-		Scheme: "https",
-		Host:   "api.uptimerobot.com",
-		Path:   "/v2/" + verb,
-	}
+	requestURL := c.URL + "/v2/" + verb
 	form := url.Values{}
 	form.Add("api_key", c.apiKey)
 	form.Add("format", "json")
 	for k, v := range params {
 		form.Add(k, v)
 	}
-	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", requestURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP request: %v", err)
 	}

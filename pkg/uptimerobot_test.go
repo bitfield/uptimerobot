@@ -1,49 +1,68 @@
 package uptimerobot
 
 import (
-	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 )
 
-type MockHTTPClient struct {
-	DoFunc func(req *http.Request) (*http.Response, error)
-}
-
-func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	if m.DoFunc != nil {
-		return m.DoFunc(req)
+func TestNewMonitor(t *testing.T) {
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			t.Errorf("want POST request, got %q", r.Method)
+		}
+		wantURL := "/v2/newMonitor"
+		if r.URL.EscapedPath() != wantURL {
+			t.Errorf("want %q, got %q", wantURL, r.URL.EscapedPath())
+		}
+		_, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/newMonitor.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
+	want := Monitor{
+		FriendlyName: "My test monitor",
+		URL:          "http://example.com",
+		Type:         MonitorType("HTTP"),
 	}
-	return &http.Response{}, nil
-}
-
-func fakeAccountDetailsHandler(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{
-			"stat": "ok",
-			"account": {
-				"email": "test@domain.com",
-				"monitor_limit": 50,
-				"monitor_interval": 1,
-				"up_monitors": 1,
-				"down_monitors": 0,
-				"paused_monitors": 2
-			}
-		      }`)),
-	}, nil
+	got, err := client.NewMonitor(want)
+	if err != nil {
+		t.Error(err)
+	}
+	if got.ID != 777810874 {
+		t.Errorf("NewMonitor() => ID %d, want 777810874", got.ID)
+	}
 }
 
 func TestGetAccountDetails(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeAccountDetailsHandler,
-	}
-	c.http = &mockClient
-	a, err := c.GetAccountDetails()
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/getAccountDetails.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
+	a, err := client.GetAccountDetails()
 	if err != nil {
 		t.Error(err)
 	}
@@ -53,63 +72,22 @@ func TestGetAccountDetails(t *testing.T) {
 	}
 }
 
-func badAccountDetailsHandler(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{
-			"stat": "false",
-			"error": {"message": "Somebody set up us the bomb"}}`)),
-	}, nil
-}
-
-func TestAPIErrorResponse(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: badAccountDetailsHandler,
-	}
-	c.http = &mockClient
-	_, err := c.GetAccountDetails()
-	if err == nil {
-		t.Error("API call with error response returned non-nil error")
-	}
-}
-
-func TestDebugFlag(t *testing.T) {
-	c := New("dummy")
-	out := &bytes.Buffer{}
-	c.Debug = out
-	mockClient := MockHTTPClient{
-		DoFunc: fakeAccountDetailsHandler,
-	}
-	c.http = &mockClient
-	_, err := c.GetAccountDetails()
-	if err != nil {
-		t.Error("GetAccountDetails() returned non-nil in debug mode")
-	}
-	want := "POST /v2/getAccountDetails HTTP/1.1"
-	if !strings.Contains(out.String(), want) {
-		t.Errorf("GetAccountDetails() debugged %v, want %q ...", out.String(), want)
-	}
-}
-
-func fakeGetAlertContactsHandler(req *http.Request) (*http.Response, error) {
-	data, err := os.Open("testdata/getAlertContacts.json")
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
-}
 func TestGetAlertContacts(t *testing.T) {
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/getAlertContacts.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
 	want := []string{"John Doe", "My Twitter"}
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetAlertContactsHandler,
-	}
-	c.http = &mockClient
-	contacts, err := c.GetAlertContacts()
+	contacts, err := client.GetAlertContacts()
 	if err != nil {
 		t.Error(err)
 	}
@@ -120,25 +98,22 @@ func TestGetAlertContacts(t *testing.T) {
 	}
 }
 
-func fakeGetMonitorByIDHandler(req *http.Request) (*http.Response, error) {
-	data, err := os.Open("testdata/getMonitorByID.json")
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
-}
-
 func TestGetMonitorByID(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetMonitorByIDHandler,
-	}
-	c.http = &mockClient
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/getMonitorByID.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
 	var want int64 = 777749809
-	got, err := c.GetMonitorByID(want)
+	got, err := client.GetMonitorByID(want)
 	if err != nil {
 		t.Error(err)
 	}
@@ -147,30 +122,27 @@ func TestGetMonitorByID(t *testing.T) {
 	}
 }
 
-func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
-	data, err := os.Open("testdata/getMonitors.json")
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
-}
-
 func TestGetMonitors(t *testing.T) {
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/getMonitors.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
 	want := []string{
 		"Google",
 		"My Web Page",
 		"My FTP Server",
 		"PortTest",
 	}
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetMonitorsHandler,
-	}
-	c.http = &mockClient
-	monitors, err := c.GetMonitors()
+	monitors, err := client.GetMonitors()
 	if err != nil {
 		t.Error(err)
 	}
@@ -181,31 +153,22 @@ func TestGetMonitors(t *testing.T) {
 	}
 }
 
-func fakeGetMonitorsBySearchHandler(req *http.Request) (*http.Response, error) {
-	var f string
-	if req.FormValue("search") != "" {
-		f = "testdata/getMonitorsBySearch.json"
-	} else {
-		f = "testdata/getMonitors.json"
-	}
-	data, err := os.Open(f)
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
-}
-
 func TestGetMonitorsBySearch(t *testing.T) {
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/getMonitorsBySearch.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
 	want := "My Web Page"
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetMonitorsBySearchHandler,
-	}
-	c.http = &mockClient
-	monitors, err := c.GetMonitorsBySearch(want)
+	monitors, err := client.GetMonitorsBySearch(want)
 	if err != nil {
 		t.Error(err)
 	}
@@ -215,102 +178,78 @@ func TestGetMonitorsBySearch(t *testing.T) {
 	}
 }
 
-func fakeNewMonitorHandler(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{
-			"stat": "ok",
-			"monitor": {
-				"id": 777810874,
-				"status": 1,
-				"type": 1
-			}
-		      }`)),
-	}, nil
-}
-
-func TestNewMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeNewMonitorHandler,
-	}
-	c.http = &mockClient
-	want := Monitor{
-		FriendlyName: "My test monitor",
-		URL:          "http://example.com",
-		Type:         MonitorType("HTTP"),
-	}
-	got, err := c.NewMonitor(want)
-	if err != nil {
-		t.Error(err)
-	}
-	if got.ID != 777810874 {
-		t.Errorf("NewMonitor() => ID %d, want 777810874", got.ID)
-	}
-}
-
-func fakePauseMonitorHandler(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{
-			"stat": "ok",
-			"monitor": {
-				"id": 677810870
-			}
-		      }`)),
-	}, nil
-}
-
 func TestPauseMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakePauseMonitorHandler,
-	}
-	c.http = &mockClient
-	mon := Monitor{
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/pauseMonitor.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
+	want := Monitor{
 		ID: 677810870,
 	}
-	got, err := c.PauseMonitor(mon)
+	got, err := client.PauseMonitor(want)
 	if err != nil {
 		t.Error(err)
 	}
-	if got.ID != mon.ID {
-		t.Errorf("PauseMonitor() => ID %d, want %d", got.ID, mon.ID)
+	if got.ID != want.ID {
+		t.Errorf("PauseMonitor() => ID %d, want %d", got.ID, want.ID)
 	}
-
 }
 
 func TestStartMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakePauseMonitorHandler,
-	}
-	c.http = &mockClient
-	mon := Monitor{
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/startMonitor.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
+	want := Monitor{
 		ID: 677810870,
 	}
-	got, err := c.StartMonitor(mon)
+	got, err := client.StartMonitor(want)
 	if err != nil {
 		t.Error(err)
 	}
-	if got.ID != mon.ID {
-		t.Errorf("StartMonitor() => ID %d, want %d", got.ID, mon.ID)
+	if got.ID != want.ID {
+		t.Errorf("StartMonitor() => ID %d, want %d", got.ID, want.ID)
 	}
-
 }
 
 func TestEnsureMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetMonitorsBySearchHandler,
-	}
-	c.http = &mockClient
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/getMonitorsBySearch.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
 	want := Monitor{
 		FriendlyName: "My Web Page",
 		URL:          "http://mywebpage.com",
 		Type:         MonitorType("HTTP"),
 	}
-	got, err := c.EnsureMonitor(want)
+	got, err := client.EnsureMonitor(want)
 	if err != nil {
 		t.Error(err)
 	}
@@ -320,15 +259,23 @@ func TestEnsureMonitor(t *testing.T) {
 }
 
 func TestDeleteMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeNewMonitorHandler,
-	}
-	c.http = &mockClient
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		data, err := os.Open("testdata/deleteMonitor.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.http = ts.Client()
+	client.URL = ts.URL
 	want := Monitor{
 		ID: 777810874,
 	}
-	got, err := c.DeleteMonitor(want)
+	got, err := client.DeleteMonitor(want)
 	if err != nil {
 		t.Error(err)
 	}
@@ -355,12 +302,11 @@ func TestRender(t *testing.T) {
 		DownMonitors:    2,
 		PausedMonitors:  0,
 	}
-	want := `Email: j.random@example.com
-Monitor limit: 300
-Monitor interval: 1
-Up monitors: 208
-Down monitors: 2
-Paused monitors: 0`
+	wantBytes, err := ioutil.ReadFile("testdata/account_template.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := string(wantBytes)
 	got := render(accountTemplate, input)
 	if got != want {
 		t.Errorf("render(%q) = %q, want %q", input, got, want)
