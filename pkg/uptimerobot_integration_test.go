@@ -3,24 +3,31 @@
 package uptimerobot
 
 import (
+	"log"
 	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-func getAPIKey(t *testing.T) string {
+var client Client
+
+func init() {
 	key := os.Getenv("UPTIMEROBOT_API_KEY")
 	if key == "" {
-		t.Fatal("'UPTIMEROBOT_API_KEY' must be set for integration tests")
+		log.Fatal("'UPTIMEROBOT_API_KEY' must be set for integration tests")
 	}
-	return key
+	client = New(key)
+	debug := os.Getenv("UPTIMEROBOT_DEBUG")
+	if debug != "" {
+		client.Debug = os.Stdout
+	}
 }
 
 func exampleMonitor(name string) Monitor {
 	return Monitor{
 		FriendlyName: name,
-		URL:          "http://example.com",
+		URL:          "http://example.com/" + name,
 		Type:         MonitorType("HTTP"),
 		SubType:      MonitorSubType("HTTP (80)"),
 		KeywordType:  0.0,
@@ -30,9 +37,7 @@ func exampleMonitor(name string) Monitor {
 
 func TestCreateGetIntegration(t *testing.T) {
 	t.Parallel()
-	client := New(getAPIKey(t))
 	want := exampleMonitor("create_test")
-	// client.Debug = os.Stdout
 	result, err := client.NewMonitor(want)
 	if err != nil {
 		t.Fatal(err)
@@ -47,9 +52,7 @@ func TestCreateGetIntegration(t *testing.T) {
 
 func TestDeleteIntegration(t *testing.T) {
 	t.Parallel()
-	client := New(getAPIKey(t))
 	toDelete := exampleMonitor("delete_test")
-	// client.Debug = os.Stdout
 	result, err := client.NewMonitor(toDelete)
 	if err != nil {
 		t.Fatal(err)
