@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"text/template"
@@ -48,6 +49,19 @@ type Client struct {
 	http   *http.Client
 	URL    string
 	Debug  io.Writer
+}
+
+// New takes an UptimeRobot API key and returns a Client.
+func New(apiKey string) Client {
+	client := Client{
+		apiKey: apiKey,
+		URL:    "https://api.uptimerobot.com",
+		http:   &http.Client{Timeout: 10 * time.Second},
+	}
+	if os.Getenv("UPTIMEROBOT_DEBUG") != "" {
+		client.Debug = os.Stdout
+	}
+	return client
 }
 
 // Error represents an API error.
@@ -168,14 +182,6 @@ func (m Monitor) FriendlyKeywordType() string {
 		return "not exists"
 	default:
 		return fmt.Sprintf("%v", m.KeywordType)
-	}
-}
-
-// New takes an UptimeRobot API key and returns a Client.
-func New(apiKey string) Client {
-	return Client{
-		apiKey: apiKey,
-		http:   &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
