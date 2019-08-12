@@ -1,0 +1,8 @@
+{
+  "id": 777749809,
+  "friendly_name": "Google",
+  "url": "http://www.google.com",
+  "type": 1,
+  "port": 80,
+  "alert_contacts": "3_0_0-5_0_0-7_0_0"
+}

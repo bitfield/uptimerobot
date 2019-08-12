@@ -1,0 +1,9 @@
+{
+  "api_key": "dummy",
+  "format": "json",
+  "friendly_name": "My test monitor",
+  "url": "http://example.com",
+  "type": 1,
+  "port": 80,
+  "alert_contacts": "3_0_0-5_0_0-7_0_0"
+}
