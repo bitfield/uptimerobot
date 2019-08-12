@@ -106,7 +106,7 @@ func TestNewMonitor(t *testing.T) {
 		if !cmp.Equal(wantMap, bodyMap) {
 			t.Error(cmp.Diff(wantMap, bodyMap))
 		}
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		data, err := os.Open("testdata/newMonitor.json")
 		if err != nil {
 			t.Fatal(err)
@@ -136,15 +136,7 @@ func TestNewMonitor(t *testing.T) {
 func TestGetAccountDetails(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		data, err := os.Open("testdata/getAccountDetails.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
+	ts := cannedResponseServer(t, "testdata/getAccountDetails.json")
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
@@ -168,15 +160,7 @@ func TestGetAccountDetails(t *testing.T) {
 func TestGetAlertContacts(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		data, err := os.Open("testdata/getAlertContacts.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
+	ts := cannedResponseServer(t, "testdata/getAlertContacts.json")
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
@@ -208,15 +192,7 @@ func TestGetAlertContacts(t *testing.T) {
 func TestGetMonitorByID(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		data, err := os.Open("testdata/getMonitorByID.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
+	ts := cannedResponseServer(t, "testdata/getMonitorByID.json")
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
@@ -239,15 +215,7 @@ func TestGetMonitorByID(t *testing.T) {
 func TestGetMonitors(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		data, err := os.Open("testdata/getMonitors.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
+	ts := cannedResponseServer(t, "testdata/getMonitors.json")
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
@@ -294,15 +262,7 @@ func TestGetMonitors(t *testing.T) {
 func TestGetMonitorsBySearch(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		data, err := os.Open("testdata/getMonitorsBySearch.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
+	ts := cannedResponseServer(t, "testdata/getMonitorsBySearch.json")
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
@@ -326,15 +286,7 @@ func TestGetMonitorsBySearch(t *testing.T) {
 func TestPauseMonitor(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		data, err := os.Open("testdata/pauseMonitor.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
+	ts := cannedResponseServer(t, "testdata/pauseMonitor.json")
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
@@ -353,15 +305,7 @@ func TestPauseMonitor(t *testing.T) {
 func TestStartMonitor(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		data, err := os.Open("testdata/startMonitor.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
+	ts := cannedResponseServer(t, "testdata/startMonitor.json")
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
@@ -380,15 +324,7 @@ func TestStartMonitor(t *testing.T) {
 func TestEnsureMonitor(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		data, err := os.Open("testdata/getMonitorsBySearch.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
+	ts := cannedResponseServer(t, "testdata/getMonitorsBySearch.json")
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
@@ -410,15 +346,7 @@ func TestEnsureMonitor(t *testing.T) {
 func TestDeleteMonitor(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		data, err := os.Open("testdata/deleteMonitor.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
+	ts := cannedResponseServer(t, "testdata/deleteMonitor.json")
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
@@ -527,4 +455,17 @@ func TestFriendlyKeywordType(t *testing.T) {
 	if got != want {
 		t.Errorf("FriendlyKeywordType() = %q, want %q", got, want)
 	}
+}
+
+// cannedResponseServer returns a test TLS server which
+func cannedResponseServer(t *testing.T, path string) *httptest.Server {
+	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		data, err := os.Open(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
 }
