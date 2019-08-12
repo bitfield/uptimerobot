@@ -117,19 +117,23 @@ func TestNewMonitor(t *testing.T) {
 	defer ts.Close()
 	client.http = ts.Client()
 	client.URL = ts.URL
-	want := Monitor{
+	create := Monitor{
 		FriendlyName:  "My test monitor",
 		URL:           "http://example.com",
 		Type:          MonitorType("HTTP"),
 		Port:          80,
 		AlertContacts: []string{"3", "5", "7"},
 	}
-	got, err := client.NewMonitor(want)
+	got, err := client.NewMonitor(create)
 	if err != nil {
 		t.Error(err)
 	}
-	if got.ID != 777810874 {
-		t.Errorf("NewMonitor() => ID %d, want 777810874", got.ID)
+	want := Monitor{
+		ID:   777810874,
+		Type: MonitorType("HTTP"),
+	}
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
 }
 
@@ -412,48 +416,57 @@ func TestFriendlyType(t *testing.T) {
 	}
 	want := "HTTP"
 	got := m.FriendlyType()
-	if got != want {
-		t.Errorf("FriendlyType(1) = %q, want %q", got, want)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
 }
 
 func TestFriendlySubType(t *testing.T) {
 	t.Parallel()
-	mHTTPS := Monitor{
-		Type: 4,
-		// SubType is interface{}, so numeric JSON values will be parsed
-		// as float64. Therefore, our test data must be float64.
-		SubType: 2.0,
+	tcs := []struct {
+		name string
+		mon  Monitor
+		want string
+	}{
+		{
+			name: "HTTPS",
+			mon: Monitor{
+				Type:    4,
+				SubType: 2,
+			},
+			want: "HTTPS (443)",
+		},
+		{
+			name: "Custom Port",
+			mon: Monitor{
+				Type:    4,
+				SubType: 99,
+				Port:    8080,
+			},
+			want: "Custom Port (8080)",
+		},
 	}
-	wantHTTPS := "HTTPS (443)"
-	gotHTTPS := mHTTPS.FriendlySubType()
-	if gotHTTPS != wantHTTPS {
-		t.Errorf("FriendlySubType(HTTPS) = %q, want %q", gotHTTPS, wantHTTPS)
-	}
-	mCustom := Monitor{
-		Type:    4,
-		SubType: 99.0,
-		Port:    8080,
-	}
-	wantCustom := "Custom Port (8080)"
-	gotCustom := mCustom.FriendlySubType()
-	if gotCustom != wantCustom {
-		t.Errorf("FriendlySubType(Custom8080) = %q, want %q", gotCustom, wantCustom)
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := tc.mon.FriendlySubType()
+			if !cmp.Equal(tc.want, got) {
+				t.Error(cmp.Diff(tc.want, got))
+			}
+		})
 	}
 }
 
 func TestFriendlyKeywordType(t *testing.T) {
 	t.Parallel()
 	m := Monitor{
-		Type: 2,
-		// KeywordType is interface{}, so numeric JSON values will be parsed
-		// as float64. Therefore, our test data must be float64.
-		KeywordType: 1.0,
+		Type:        2,
+		KeywordType: 1,
 	}
 	want := "exists"
 	got := m.FriendlyKeywordType()
-	if got != want {
-		t.Errorf("FriendlyKeywordType() = %q, want %q", got, want)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
 }
 
