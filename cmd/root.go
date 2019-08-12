@@ -55,5 +55,5 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&apiKey, "apiKey", "", "UptimeRobot API key")
 	viper.BindPFlag("apiKey", RootCmd.PersistentFlags().Lookup("apiKey"))
 	viper.BindEnv("apiKey", "UPTIMEROBOT_API_KEY")
-	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Debug mode (show API request without making it)")
+	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Debug mode (show API request and response)")
 }
