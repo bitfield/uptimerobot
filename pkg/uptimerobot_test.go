@@ -7,8 +7,33 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
+func TestUnmarshalMonitor(t *testing.T) {
+	t.Parallel()
+	want := Monitor{
+		ID:           777749809,
+		FriendlyName: "Google",
+		URL:          "http://www.google.com",
+		Type:         MonitorType("HTTP"),
+		Port:         80,
+	}
+	data, err := ioutil.ReadFile("testdata/unmarshal.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := Monitor{}
+	err = got.UnmarshalJSON(data)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+
+}
 func TestNewMonitor(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -25,7 +26,7 @@ var MonitorTypes = map[int]string{
 }
 
 // MonitorSubTypes maps a numeric monitor subtype to the name of the monitor subtype.
-var MonitorSubTypes = map[float64]string{
+var MonitorSubTypes = map[int]string{
 	1:  "HTTP (80)",
 	2:  "HTTPS (443)",
 	3:  "FTP (21)",
@@ -124,18 +125,15 @@ func (a AlertContact) String() string {
 
 // Monitor represents an UptimeRobot monitor.
 type Monitor struct {
-	ID           int64  `json:"id,omitempty"`
-	FriendlyName string `json:"friendly_name"`
-	URL          string `json:"url"`
-	Type         int    `json:"type"`
-	// keyword_type, sub_type, and port are returned as either an integer
-	// (if set) or an empty string (if unset), which Go's JSON library won't
-	// parse for integer fields: https://github.com/golang/go/issues/22182
-	SubType       interface{} `json:"sub_type,omitempty"`
-	KeywordType   interface{} `json:"keyword_type,omitempty"`
-	Port          interface{} `json:"port"`
-	KeywordValue  string      `json:"keyword_value"`
-	AlertContacts []string    `json:"alert_contacts"`
+	ID            int64    `json:"id,omitempty"`
+	FriendlyName  string   `json:"friendly_name"`
+	URL           string   `json:"url"`
+	Type          int      `json:"type"`
+	SubType       int      `json:"sub_type,omitempty"`
+	KeywordType   int      `json:"keyword_type,omitempty"`
+	Port          int      `json:"port"`
+	KeywordValue  string   `json:"keyword_value"`
+	AlertContacts []string `json:"alert_contacts"`
 }
 
 const monitorTemplate = `ID: {{ .ID }}
@@ -163,7 +161,7 @@ func (m Monitor) FriendlyType() string {
 // FriendlySubType returns a human-readable name for the monitor subtype,
 // including the port number.
 func (m Monitor) FriendlySubType() string {
-	name, ok := MonitorSubTypes[m.SubType.(float64)]
+	name, ok := MonitorSubTypes[m.SubType]
 	if !ok {
 		return fmt.Sprintf("%v", m.SubType)
 	}
@@ -176,13 +174,64 @@ func (m Monitor) FriendlySubType() string {
 // FriendlyKeywordType returns a human-readable name for the monitor keyword type.
 func (m Monitor) FriendlyKeywordType() string {
 	switch m.KeywordType {
-	case 1.0:
+	case 1:
 		return "exists"
-	case 2.0:
+	case 2:
 		return "not exists"
 	default:
 		return fmt.Sprintf("%v", m.KeywordType)
 	}
+}
+
+// UnmarshalJSON converts a JSON monitor representation to a Monitor struct,
+// handling the Uptime Robot API's invalid encoding of integer zeros as empty
+// strings.
+func (m *Monitor) UnmarshalJSON(data []byte) error {
+	// We need a custom unmarshaler because keyword_type, sub_type, and port
+	// are returned as either a quoted integer (if set) or an empty string
+	// (if unset), which Go's JSON library won't parse for integer fields:
+	// https://github.com/golang/go/issues/22182
+	//
+	// Create a temporary map and unmarshal the data into it
+	raw := map[string]interface{}{}
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return err
+	}
+	// Check and clean up any problematic fields
+	fields := []string{
+		"sub_type",
+		"keyword_type",
+		"port",
+	}
+	for _, f := range fields {
+		// If the field is empty string, that means zero.
+		if raw[f] == "" {
+			raw[f] = 0
+		}
+		// Otherwise, try to convert it to int.
+		if s, ok := raw[f].(string); ok {
+			v, err := strconv.Atoi(s)
+			if err != nil {
+				return err
+			}
+			raw[f] = v
+		}
+	}
+	// Marshall the cleaned-up data back to JSON
+	data, err = json.Marshal(raw)
+	if err != nil {
+		return err
+	}
+	// Use a temporary type definition to avoid infinite recursion when unmarshaling
+	type MonitorAlias Monitor
+	var ma MonitorAlias
+	if err := json.Unmarshal(data, &ma); err != nil {
+		return err
+	}
+	// Finally, convert the temporary type back to a Monitor
+	*m = Monitor(ma)
+	return nil
 }
 
 // GetAccountDetails returns an Account representing the account details.
@@ -251,7 +300,7 @@ func (c *Client) NewMonitor(m Monitor) (Monitor, error) {
 		"friendly_name":  m.FriendlyName,
 		"url":            m.URL,
 		"type":           strconv.Itoa(m.Type),
-		"sub_type":       fmt.Sprintf("%f", m.SubType),
+		"sub_type":       strconv.Itoa(m.SubType),
 		"alert_contacts": buildAlertContactList(m.AlertContacts),
 	}
 	if err := c.MakeAPICall("newMonitor", &r, p); err != nil {
@@ -361,8 +410,15 @@ func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
 		fmt.Fprintln(c.Debug, string(responseDump))
 		fmt.Fprintln(c.Debug)
 	}
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response body: %v", err)
+	}
+	resp.Body.Close()
+	respString := string(respBytes)
+	resp.Body = ioutil.NopCloser(strings.NewReader(respString))
 	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return fmt.Errorf("decoding error: %v", err)
+		return fmt.Errorf("decoding error for %q: %v", respString, err)
 	}
 	if r.Stat != "ok" {
 		e, _ := json.MarshalIndent(r.Error, "", " ")
@@ -398,7 +454,7 @@ func MonitorType(t string) int {
 }
 
 // MonitorSubType returns the monitor type number associated with the given type name.
-func MonitorSubType(t string) float64 {
+func MonitorSubType(t string) int {
 	for number, name := range MonitorSubTypes {
 		if name == t {
 			return number
