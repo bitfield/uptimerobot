@@ -228,7 +228,7 @@ Most API operations use the `Monitor` struct, which looks like this:
 
 ```go
 type Monitor struct {
-        ID           int64  `json:"id"`
+	ID           int64  `json:"id,omitempty"`
         FriendlyName string `json:"friendly_name"`
         URL          string `json:"url"`
         ...
@@ -248,20 +248,18 @@ if err != nil {
 fmt.Println(new.ID)
 ```
 
-To call an UptimeRobot API verb not implemented by the `uptimerobot` library, you can use the `MakeAPICall()` method directly:
+To call an UptimeRobot API verb not implemented by the `uptimerobot` library, you can use the `MakeAPICall()` method directly, passing it some suitable JSON data:
 
 ```go
 r := uptimerobot.Response{}
-p := uptimerobot.Params{
-        "id": 780689017,
-}
-if err := client.MakeAPICall("deleteMonitor", &r, p); err != nil {
+data := []byte(fmt.Sprintf("{\"id\": \"%d\"}", m.ID))
+if err := client.MakeAPICall("deleteMonitor", &r, data); err != nil {
     log.Fatal(err)
 }
 fmt.Println(r.Monitor.ID)
 ```
 
-The API response is returned in the `Response` struct. If the call fails, `MakeAPICall()` will return the  error message. Otherwise, the requested data will be available in the appropriate field of the `Response` struct:
+The API response is returned in the `Response` struct. If the call fails, `MakeAPICall()` will return the error message. Otherwise, the requested data will be available in the appropriate field of the `Response` struct:
 
 ```go
 type Response struct {
@@ -276,31 +274,40 @@ type Response struct {
 
 For example, when deleting a monitor, as in the above example, the ID of the deleted monitor will be returned as `r.Monitor.ID`.
 
-If things aren't working as you expect, you can assign an `io.Writer` to `client.Debug` to receive debug output. If `client.Debug` is non-nil, `MakeAPICall()` will dump the HTTP request and response to it:
+If things aren't working as you expect, you can use the debug facility to dump the raw request and response data from every API call. To do this, set the environment variable `UPTIMEROBOT_DEBUG`, which will dump debug information to the standard output, or set `client.Debug` to any `io.Writer` to send output to that writer.
 
-```go
-client.Debug = os.Stdout
-r := uptimerobot.Response{}
-p := uptimerobot.Params{
-    "frogurt": "cursed",
-}
-if err := client.MakeAPICall("monkeyPaw", &r, p); err != nil {
-    log.Fatal(err)
-}
-```
-
-outputs:
+Here's an example of the debug output shown when creating a new monitor:
 
 ```
-POST /v2/monkeyPaw HTTP/1.1
+POST /v2/newMonitor HTTP/1.1
 Host: api.uptimerobot.com
 User-Agent: Go-http-client/1.1
-Content-Length: 52
-Content-Type: application/x-www-form-urlencoded
+Content-Length: 221
+Content-Type: application/json
 Accept-Encoding: gzip
 
-api_key=XXX&format=json&frogurt=cursed
-...
+{
+  "alert_contacts": "0335551_0_0-2416450_0_0",
+  "api_key": "XXX",
+  "format": "json",
+  "friendly_name": "Example check",
+  "port": 443,
+  "type": 1,
+  "url": "https://www.example.com"
+}
+
+HTTP/2.0 200 OK
+Access-Control-Allow-Origin: *
+Cf-Ray: 505422654b04dbf3-LHR
+Content-Type: application/json; charset=utf-8
+Date: Mon, 12 Aug 2019 17:22:57 GMT
+Etag: W/"33-NlNt8dOhQvno31TtQYsI0xTJ9w"
+Expect-Ct: max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+Server: cloudflare
+Set-Cookie: __cfduid=d9ec99b8a777d9f806956432718fb5c81565630577; expires=Tue, 11-Aug-20 17:22:57 GMT; path=/; domain=.uptimerobot.com; HttpOnly
+Vary: Accept-Encoding
+
+{"stat":"ok","monitor":{"id":783263671,"status":1}}
 ```
 
 ## Bugs and feature requests
