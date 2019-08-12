@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -67,9 +66,6 @@ func New(apiKey string) Client {
 
 // Error represents an API error.
 type Error map[string]interface{}
-
-// Params holds optional parameters for API calls.
-type Params map[string]string
 
 // Response represents an API response.
 type Response struct {
@@ -132,8 +128,8 @@ type Monitor struct {
 	SubType       int      `json:"sub_type,omitempty"`
 	KeywordType   int      `json:"keyword_type,omitempty"`
 	Port          int      `json:"port"`
-	KeywordValue  string   `json:"keyword_value"`
-	AlertContacts []string `json:"alert_contacts"`
+	KeywordValue  string   `json:"keyword_value,omitempty"`
+	AlertContacts []string `json:"alert_contacts,omitempty"`
 }
 
 const monitorTemplate = `ID: {{ .ID }}
@@ -141,6 +137,7 @@ Name: {{ .FriendlyName }}
 URL: {{ .URL }}
 Type: {{ .FriendlyType }}
 Subtype: {{ .FriendlySubType }}
+Port: {{ .Port}}
 Keyword type: {{ .FriendlyKeywordType }}
 Keyword value: {{ .KeywordValue }}`
 
@@ -183,6 +180,36 @@ func (m Monitor) FriendlyKeywordType() string {
 	}
 }
 
+// MarshalJSON converts a Monitor struct into its string JSON representation,
+// handling the special encoding of the alert_contacts field.
+func (m Monitor) MarshalJSON() ([]byte, error) {
+	// Use a temporary type definition to avoid infinite recursion when
+	// marshaling
+	type MonitorAlias Monitor
+	ma := MonitorAlias(m)
+	data, err := json.Marshal(ma)
+	if err != nil {
+		return []byte{}, err
+	}
+	// Create a temporary map and unmarshal the data into it
+	tmp := map[string]interface{}{}
+	err = json.Unmarshal(data, &tmp)
+	if err != nil {
+		return []byte{}, err
+	}
+	contacts := make([]string, len(m.AlertContacts))
+	for i, c := range m.AlertContacts {
+		contacts[i] = c + "_0_0"
+	}
+	tmp["alert_contacts"] = strings.Join(contacts, "-")
+	// Marshal the cleaned-up data back to JSON again
+	data, err = json.Marshal(tmp)
+	if err != nil {
+		return []byte{}, err
+	}
+	return data, nil
+}
+
 // UnmarshalJSON converts a JSON monitor representation to a Monitor struct,
 // handling the Uptime Robot API's invalid encoding of integer zeros as empty
 // strings.
@@ -218,7 +245,7 @@ func (m *Monitor) UnmarshalJSON(data []byte) error {
 			raw[f] = v
 		}
 	}
-	// Marshall the cleaned-up data back to JSON
+	// Marshal the cleaned-up data back to JSON
 	data, err = json.Marshal(raw)
 	if err != nil {
 		return err
@@ -237,7 +264,7 @@ func (m *Monitor) UnmarshalJSON(data []byte) error {
 // GetAccountDetails returns an Account representing the account details.
 func (c *Client) GetAccountDetails() (Account, error) {
 	r := Response{}
-	if err := c.MakeAPICall("getAccountDetails", &r, Params{}); err != nil {
+	if err := c.MakeAPICall("getAccountDetails", &r, []byte{}); err != nil {
 		return Account{}, err
 	}
 	return r.Account, nil
@@ -248,10 +275,8 @@ func (c *Client) GetAccountDetails() (Account, error) {
 // error if the operation failed.
 func (c *Client) GetMonitorByID(ID int64) (Monitor, error) {
 	r := Response{}
-	p := Params{
-		"monitors": fmt.Sprintf("%d", ID),
-	}
-	if err := c.MakeAPICall("getMonitors", &r, p); err != nil {
+	data := []byte(fmt.Sprintf("{\"monitors\": \"%d\"}", ID))
+	if err := c.MakeAPICall("getMonitors", &r, data); err != nil {
 		return Monitor{}, err
 	}
 	if len(r.Monitors) == 0 {
@@ -263,7 +288,7 @@ func (c *Client) GetMonitorByID(ID int64) (Monitor, error) {
 // GetMonitors returns a slice of Monitors representing the existing monitors.
 func (c *Client) GetMonitors() (monitors []Monitor, err error) {
 	r := Response{}
-	if err := c.MakeAPICall("getMonitors", &r, Params{}); err != nil {
+	if err := c.MakeAPICall("getMonitors", &r, []byte{}); err != nil {
 		return monitors, err
 	}
 	return r.Monitors, nil
@@ -273,10 +298,8 @@ func (c *Client) GetMonitors() (monitors []Monitor, err error) {
 // match the search string.
 func (c *Client) GetMonitorsBySearch(s string) (monitors []Monitor, err error) {
 	r := Response{}
-	p := Params{
-		"search": s,
-	}
-	if err := c.MakeAPICall("getMonitors", &r, p); err != nil {
+	data := []byte(`{"search": "` + s + `"}`)
+	if err := c.MakeAPICall("getMonitors", &r, data); err != nil {
 		return monitors, err
 	}
 	return r.Monitors, nil
@@ -285,7 +308,7 @@ func (c *Client) GetMonitorsBySearch(s string) (monitors []Monitor, err error) {
 // GetAlertContacts returns all the AlertContacts associated with the account.
 func (c *Client) GetAlertContacts() (contacts []AlertContact, err error) {
 	r := Response{}
-	if err := c.MakeAPICall("getAlertContacts", &r, Params{}); err != nil {
+	if err := c.MakeAPICall("getAlertContacts", &r, []byte{}); err != nil {
 		return contacts, err
 	}
 	return r.AlertContacts, nil
@@ -296,14 +319,11 @@ func (c *Client) GetAlertContacts() (contacts []AlertContact, err error) {
 // the newly created monitor, or an error if the operation failed.
 func (c *Client) NewMonitor(m Monitor) (Monitor, error) {
 	r := Response{}
-	p := Params{
-		"friendly_name":  m.FriendlyName,
-		"url":            m.URL,
-		"type":           strconv.Itoa(m.Type),
-		"sub_type":       strconv.Itoa(m.SubType),
-		"alert_contacts": buildAlertContactList(m.AlertContacts),
+	data, err := json.Marshal(m)
+	if err != nil {
+		return Monitor{}, err
 	}
-	if err := c.MakeAPICall("newMonitor", &r, p); err != nil {
+	if err := c.MakeAPICall("newMonitor", &r, data); err != nil {
 		return Monitor{}, err
 	}
 	return r.Monitor, nil
@@ -334,11 +354,8 @@ func (c *Client) EnsureMonitor(m Monitor) (Monitor, error) {
 // set to the ID of the monitor, or an error if the operation failed.
 func (c *Client) PauseMonitor(m Monitor) (Monitor, error) {
 	r := Response{}
-	p := Params{
-		"id":     strconv.FormatInt(m.ID, 10),
-		"status": StatusPause,
-	}
-	if err := c.MakeAPICall("editMonitor", &r, p); err != nil {
+	data := []byte(fmt.Sprintf("{\"id\": \"%d\",\"status\": %q}", m.ID, StatusPause))
+	if err := c.MakeAPICall("editMonitor", &r, data); err != nil {
 		return Monitor{}, err
 	}
 	return r.Monitor, nil
@@ -350,11 +367,8 @@ func (c *Client) PauseMonitor(m Monitor) (Monitor, error) {
 // failed.
 func (c *Client) StartMonitor(m Monitor) (Monitor, error) {
 	r := Response{}
-	p := Params{
-		"id":     strconv.FormatInt(m.ID, 10),
-		"status": StatusResume,
-	}
-	if err := c.MakeAPICall("editMonitor", &r, p); err != nil {
+	data := []byte(fmt.Sprintf("{\"id\": \"%d\",\"status\": %q}", m.ID, StatusResume))
+	if err := c.MakeAPICall("editMonitor", &r, data); err != nil {
 		return Monitor{}, err
 	}
 	return r.Monitor, nil
@@ -365,30 +379,26 @@ func (c *Client) StartMonitor(m Monitor) (Monitor, error) {
 // of the deleted monitor, or an error if the operation failed.
 func (c *Client) DeleteMonitor(m Monitor) (Monitor, error) {
 	r := Response{}
-	p := Params{
-		"id": strconv.FormatInt(m.ID, 10),
-	}
-	if err := c.MakeAPICall("deleteMonitor", &r, p); err != nil {
+	data := []byte(fmt.Sprintf("{\"id\": \"%d\"}", m.ID))
+	if err := c.MakeAPICall("deleteMonitor", &r, data); err != nil {
 		return Monitor{}, err
 	}
 	return r.Monitor, nil
 }
 
-// MakeAPICall calls the UptimeRobot API with the specified verb and stores the
-// returned data in the Response struct.
-func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
-	requestURL := c.URL + "/v2/" + verb
-	form := url.Values{}
-	form.Add("api_key", c.apiKey)
-	form.Add("format", "json")
-	for k, v := range params {
-		form.Add(k, v)
+// MakeAPICall calls the UptimeRobot API with the specified verb and data, and
+// stores the returned data in the Response struct.
+func (c *Client) MakeAPICall(verb string, r *Response, data []byte) error {
+	data, err := decorateRequestData(data, c.apiKey)
+	if err != nil {
+		return err
 	}
-	req, err := http.NewRequest("POST", requestURL, strings.NewReader(form.Encode()))
+	requestURL := c.URL + "/v2/" + verb
+	req, err := http.NewRequest(http.MethodPost, requestURL, bytes.NewBuffer(data))
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP request: %v", err)
 	}
-	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+	req.Header.Add("content-type", "application/json")
 	if c.Debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
@@ -427,6 +437,29 @@ func (c *Client) MakeAPICall(verb string, r *Response, params Params) error {
 	return nil
 }
 
+// decorateRequestData takes JSON data representing an API request, and adds the
+// required 'api_key' and 'format' fields to it.
+func decorateRequestData(data []byte, apiKey string) ([]byte, error) {
+	// Create a temporary map and unmarshal the data into it
+	tmp := map[string]interface{}{}
+	// Skip unmarshaling empty data
+	if len(data) > 0 {
+		err := json.Unmarshal(data, &tmp)
+		if err != nil {
+			return []byte{}, fmt.Errorf("unmarshaling request data: %v", err)
+		}
+	}
+	// Add in the necessary request fields
+	tmp["api_key"] = apiKey
+	tmp["format"] = "json"
+	// Marshal it back into string form
+	data, err := json.MarshalIndent(tmp, "", "  ")
+	if err != nil {
+		return []byte{}, fmt.Errorf("remarshaling cleaned-up request data: %v", err)
+	}
+	return data, nil
+}
+
 // render takes a template and a data value, and returns the string result of
 // executing the template in the context of the value.
 func render(templateName string, value interface{}) string {
@@ -462,14 +495,4 @@ func MonitorSubType(t string) int {
 	}
 	log.Fatalf("unknown monitor subtype %q", t)
 	return 0
-}
-
-// buildAlertContactList constructs a string in the right format to pass to the
-// 'new monitor' API to set alert contacts on a monitor.
-func buildAlertContactList(contactIDs []string) string {
-	contacts := make([]string, len(contactIDs))
-	for i, c := range contactIDs {
-		contacts[i] = c + "_0_0"
-	}
-	return strings.Join(contacts, "-")
 }
