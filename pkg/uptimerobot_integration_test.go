@@ -30,8 +30,7 @@ func exampleMonitor(name string) Monitor {
 		URL:          "http://example.com/" + name,
 		Type:         MonitorType("HTTP"),
 		SubType:      MonitorSubType("HTTP (80)"),
-		KeywordType:  0.0,
-		Port:         80.0,
+		Port:         80,
 	}
 }
 
@@ -64,5 +63,13 @@ func TestDeleteIntegration(t *testing.T) {
 	_, err = client.GetMonitorByID(result.ID)
 	if err == nil {
 		t.Error("want error getting deleted check, but got nil")
+	}
+}
+
+func TestAccountDetailsIntegration(t *testing.T) {
+	t.Parallel()
+	_, err := client.GetAccountDetails()
+	if err != nil {
+		t.Error(err)
 	}
 }
