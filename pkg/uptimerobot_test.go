@@ -18,7 +18,7 @@ func TestMarshalMonitor(t *testing.T) {
 		ID:            777749809,
 		FriendlyName:  "Google",
 		URL:           "http://www.google.com",
-		Type:          MonitorType("HTTP"),
+		Type:          TypeHTTP,
 		Port:          80,
 		AlertContacts: []string{"3", "5", "7"},
 	}
@@ -53,7 +53,7 @@ func TestUnmarshalMonitor(t *testing.T) {
 		ID:           777749809,
 		FriendlyName: "Google",
 		URL:          "http://www.google.com",
-		Type:         MonitorType("HTTP"),
+		Type:         TypeHTTP,
 		Port:         80,
 	}
 	data, err := ioutil.ReadFile("testdata/unmarshal.json")
@@ -120,7 +120,7 @@ func TestNewMonitor(t *testing.T) {
 	create := Monitor{
 		FriendlyName:  "My test monitor",
 		URL:           "http://example.com",
-		Type:          MonitorType("HTTP"),
+		Type:          TypeHTTP,
 		Port:          80,
 		AlertContacts: []string{"3", "5", "7"},
 	}
@@ -130,7 +130,7 @@ func TestNewMonitor(t *testing.T) {
 	}
 	want := Monitor{
 		ID:   777810874,
-		Type: MonitorType("HTTP"),
+		Type: TypeHTTP,
 	}
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
@@ -204,7 +204,7 @@ func TestGetMonitorByID(t *testing.T) {
 		ID:           777749809,
 		FriendlyName: "Google",
 		URL:          "http://www.google.com",
-		Type:         MonitorType("HTTP"),
+		Type:         TypeHTTP,
 		Port:         80,
 	}
 	got, err := client.GetMonitorByID(want.ID)
@@ -228,29 +228,29 @@ func TestGetMonitors(t *testing.T) {
 			ID:           777749809,
 			FriendlyName: "Google",
 			URL:          "http://www.google.com",
-			Type:         MonitorType("HTTP"),
+			Type:         TypeHTTP,
 			Port:         80,
 		},
 		{
 			ID:           777712827,
 			FriendlyName: "My Web Page",
 			URL:          "http://mywebpage.com/",
-			Type:         MonitorType("HTTP"),
+			Type:         TypeHTTP,
 		},
 		{
 			ID:           777559666,
 			FriendlyName: "My FTP Server",
 			URL:          "ftp.mywebpage.com",
-			Type:         MonitorType("port"),
-			SubType:      MonitorSubType("FTP (21)"),
+			Type:         TypePort,
+			SubType:      SubTypeFTP,
 			Port:         21,
 		},
 		{
 			ID:           781397847,
 			FriendlyName: "PortTest",
 			URL:          "mywebpage.com",
-			Type:         MonitorType("port"),
-			SubType:      MonitorSubType("Custom Port"),
+			Type:         TypePort,
+			SubType:      SubTypeCustomPort,
 			Port:         8000,
 		},
 	}
@@ -275,7 +275,7 @@ func TestGetMonitorsBySearch(t *testing.T) {
 			ID:           777712827,
 			FriendlyName: "My Web Page",
 			URL:          "http://mywebpage.com/",
-			Type:         MonitorType("HTTP"),
+			Type:         TypeHTTP,
 		},
 	}
 	got, err := client.GetMonitorsBySearch("My Web Page")
@@ -336,7 +336,7 @@ func TestEnsureMonitor(t *testing.T) {
 		ID:           777712827,
 		FriendlyName: "My Web Page",
 		URL:          "http://mywebpage.com/",
-		Type:         MonitorType("HTTP"),
+		Type:         TypeHTTP,
 	}
 	got, err := client.EnsureMonitor(want)
 	if err != nil {
@@ -356,7 +356,7 @@ func TestDeleteMonitor(t *testing.T) {
 	client.URL = ts.URL
 	want := Monitor{
 		ID:   777810874,
-		Type: MonitorType("HTTP"),
+		Type: TypeHTTP,
 	}
 	got, err := client.DeleteMonitor(want)
 	if err != nil {
@@ -373,7 +373,7 @@ func TestRenderMonitor(t *testing.T) {
 		ID:            777749809,
 		FriendlyName:  "Google",
 		URL:           "http://www.google.com",
-		Type:          MonitorType("HTTP"),
+		Type:          TypeHTTP,
 		Port:          80,
 		AlertContacts: []string{"3", "5", "7"},
 	}

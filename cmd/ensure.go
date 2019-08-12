@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/bitfield/uptimerobot/pkg"
+	uptimerobot "github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,7 @@ var ensureCmd = &cobra.Command{
 		m := uptimerobot.Monitor{
 			URL:           args[0],
 			FriendlyName:  args[1],
-			Type:          uptimerobot.MonitorType("HTTP"),
+			Type:          uptimerobot.TypeHTTP,
 			AlertContacts: contacts,
 		}
 		result, err := client.EnsureMonitor(m)

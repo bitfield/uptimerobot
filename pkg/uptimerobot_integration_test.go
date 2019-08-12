@@ -28,8 +28,8 @@ func exampleMonitor(name string) Monitor {
 	return Monitor{
 		FriendlyName: name,
 		URL:          "http://example.com/" + name,
-		Type:         MonitorType("HTTP"),
-		SubType:      MonitorSubType("HTTP (80)"),
+		Type:         TypeHTTP,
+		SubType:      SubTypeHTTP,
 		Port:         80,
 	}
 }

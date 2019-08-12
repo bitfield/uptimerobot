@@ -16,23 +16,56 @@ import (
 	"time"
 )
 
+// TypeHTTP represents an HTTP monitor.
+const TypeHTTP = 1
+
+// TypeKeyword represents a keyword monitor.
+const TypeKeyword = 2
+
+// TypePing represents a ping monitor.
+const TypePing = 3
+
+// TypePort represents a port monitor.
+const TypePort = 4
+
 // MonitorTypes maps an integer monitor type to the name of the monitor type.
 var MonitorTypes = map[int]string{
-	1: "HTTP",
-	2: "keyword",
-	3: "ping",
-	4: "port",
+	TypeHTTP:    "HTTP",
+	TypeKeyword: "keyword",
+	TypePing:    "ping",
+	TypePort:    "port",
 }
+
+// SubTypeHTTP represents an HTTP monitor subtype.
+const SubTypeHTTP = 1
+
+// SubTypeHTTPS represents an HTTPS monitor subtype.
+const SubTypeHTTPS = 2
+
+// SubTypeFTP represents an FTP monitor subtype.
+const SubTypeFTP = 3
+
+// SubTypeSMTP represents an SMTP monitor subtype.
+const SubTypeSMTP = 4
+
+// SubTypePOP3 represents a POP3 monitor subtype.
+const SubTypePOP3 = 5
+
+// SubTypeIMAP represents an IMAP monitor subtype.
+const SubTypeIMAP = 6
+
+// SubTypeCustomPort represents a custom port monitor subtype.
+const SubTypeCustomPort = 99
 
 // MonitorSubTypes maps a numeric monitor subtype to the name of the monitor subtype.
 var MonitorSubTypes = map[int]string{
-	1:  "HTTP (80)",
-	2:  "HTTPS (443)",
-	3:  "FTP (21)",
-	4:  "SMTP (25)",
-	5:  "POP3 (110)",
-	6:  "IMAP (143)",
-	99: "Custom Port",
+	SubTypeHTTP:       "HTTP (80)",
+	SubTypeHTTPS:      "HTTPS (443)",
+	SubTypeFTP:        "FTP (21)",
+	SubTypeSMTP:       "SMTP (25)",
+	SubTypePOP3:       "POP3 (110)",
+	SubTypeIMAP:       "IMAP (143)",
+	SubTypeCustomPort: "Custom Port",
 }
 
 // StatusPause is the status value which sets a monitor to paused status when calling EditMonitor.
@@ -476,26 +509,4 @@ func render(templateName string, value interface{}) string {
 		log.Fatal(err)
 	}
 	return output.String()
-}
-
-// MonitorType returns the monitor type number associated with the given type name.
-func MonitorType(t string) int {
-	for number, name := range MonitorTypes {
-		if name == t {
-			return number
-		}
-	}
-	log.Fatalf("unknown monitor type %q", t)
-	return 0
-}
-
-// MonitorSubType returns the monitor type number associated with the given type name.
-func MonitorSubType(t string) int {
-	for number, name := range MonitorSubTypes {
-		if name == t {
-			return number
-		}
-	}
-	log.Fatalf("unknown monitor subtype %q", t)
-	return 0
 }

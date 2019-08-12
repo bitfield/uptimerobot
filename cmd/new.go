@@ -18,7 +18,7 @@ var newCmd = &cobra.Command{
 		m := uptimerobot.Monitor{
 			URL:           args[0],
 			FriendlyName:  args[1],
-			Type:          uptimerobot.MonitorType("HTTP"),
+			Type:          uptimerobot.TypeHTTP,
 			AlertContacts: contacts,
 			Port:          80,
 		}
