@@ -369,22 +369,76 @@ func TestDeleteMonitor(t *testing.T) {
 
 func TestRenderMonitor(t *testing.T) {
 	t.Parallel()
-	input := Monitor{
-		ID:            777749809,
-		FriendlyName:  "Google",
-		URL:           "http://www.google.com",
-		Type:          TypeHTTP,
-		Port:          80,
-		AlertContacts: []string{"3", "5", "7"},
+	tcs := []struct {
+		name     string
+		input    Monitor
+		wantFile string
+	}{
+		{
+			name: "Simple HTTP",
+			input: Monitor{
+				ID:            777749809,
+				FriendlyName:  "Google",
+				URL:           "http://www.google.com",
+				Type:          TypeHTTP,
+				Port:          0,
+				AlertContacts: []string{"3", "5", "7"},
+			},
+			wantFile: "testdata/monitor_http.txt",
+		},
+		{
+			name: "Keyword exists",
+			input: Monitor{
+				ID:           777749810,
+				FriendlyName: "Google",
+				URL:          "http://www.google.com",
+				Type:         TypeKeyword,
+				KeywordType:  KeywordExists,
+				KeywordValue: "bogus",
+				Port:         80,
+			},
+			wantFile: "testdata/monitor_keyword.txt",
+		},
+		{
+			name: "Keyword not exists",
+			input: Monitor{
+				ID:           777749811,
+				FriendlyName: "Google",
+				URL:          "http://www.google.com",
+				Type:         TypeKeyword,
+				KeywordType:  KeywordNotExists,
+				KeywordValue: "bogus",
+				Port:         80,
+			},
+			wantFile: "testdata/monitor_keyword_notexists.txt",
+		},
+		{
+			name: "Subtype",
+			input: Monitor{
+				ID:           777749812,
+				FriendlyName: "Google",
+				URL:          "http://www.google.com",
+				Type:         TypePort,
+				SubType:      SubTypeFTP,
+				Port:         80,
+			},
+			wantFile: "testdata/monitor_subtype.txt",
+		},
 	}
-	wantBytes, err := ioutil.ReadFile("testdata/monitor_template.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := string(wantBytes)
-	got := render(monitorTemplate, input)
-	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			wantBytes, err := ioutil.ReadFile(tc.wantFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := string(wantBytes)
+			got := render(monitorTemplate, tc.input)
+			if !cmp.Equal(want, got) {
+				t.Error(cmp.Diff(want, got))
+			}
+
+		})
 	}
 }
 
@@ -412,7 +466,7 @@ func TestRenderAccount(t *testing.T) {
 func TestFriendlyType(t *testing.T) {
 	t.Parallel()
 	m := Monitor{
-		Type: 1,
+		Type: TypeHTTP,
 	}
 	want := "HTTP"
 	got := m.FriendlyType()
@@ -431,19 +485,19 @@ func TestFriendlySubType(t *testing.T) {
 		{
 			name: "HTTPS",
 			mon: Monitor{
-				Type:    4,
-				SubType: 2,
+				Type:    TypePort,
+				SubType: SubTypeHTTPS,
 			},
 			want: "HTTPS (443)",
 		},
 		{
-			name: "Custom Port",
+			name: "Custom port",
 			mon: Monitor{
-				Type:    4,
-				SubType: 99,
+				Type:    TypePort,
+				SubType: SubTypeCustomPort,
 				Port:    8080,
 			},
-			want: "Custom Port (8080)",
+			want: "Custom port (8080)",
 		},
 	}
 	for _, tc := range tcs {
@@ -460,10 +514,10 @@ func TestFriendlySubType(t *testing.T) {
 func TestFriendlyKeywordType(t *testing.T) {
 	t.Parallel()
 	m := Monitor{
-		Type:        2,
-		KeywordType: 1,
+		Type:        TypeKeyword,
+		KeywordType: KeywordExists,
 	}
-	want := "exists"
+	want := "Exists"
 	got := m.FriendlyKeywordType()
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
