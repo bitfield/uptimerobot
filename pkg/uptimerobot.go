@@ -28,14 +28,6 @@ const TypePing = 3
 // TypePort represents a port monitor.
 const TypePort = 4
 
-// MonitorTypes maps an integer monitor type to the name of the monitor type.
-var MonitorTypes = map[int]string{
-	TypeHTTP:    "HTTP",
-	TypeKeyword: "keyword",
-	TypePing:    "ping",
-	TypePort:    "port",
-}
-
 // SubTypeHTTP represents an HTTP monitor subtype.
 const SubTypeHTTP = 1
 
@@ -57,21 +49,20 @@ const SubTypeIMAP = 6
 // SubTypeCustomPort represents a custom port monitor subtype.
 const SubTypeCustomPort = 99
 
-// MonitorSubTypes maps a numeric monitor subtype to the name of the monitor subtype.
-var MonitorSubTypes = map[int]string{
-	SubTypeHTTP:       "HTTP (80)",
-	SubTypeHTTPS:      "HTTPS (443)",
-	SubTypeFTP:        "FTP (21)",
-	SubTypeSMTP:       "SMTP (25)",
-	SubTypePOP3:       "POP3 (110)",
-	SubTypeIMAP:       "IMAP (143)",
-	SubTypeCustomPort: "Custom Port",
-}
+// KeywordExists represents a keyword check which is critical if the keyword is
+// found.
+const KeywordExists = 1
 
-// StatusPause is the status value which sets a monitor to paused status when calling EditMonitor.
+// KeywordNotExists represents a keyword check which is critical if the keyword
+// is not found.
+const KeywordNotExists = 2
+
+// StatusPause is the status value which sets a monitor to paused status when
+// calling EditMonitor.
 var StatusPause = "0"
 
-// StatusResume is the status value which sets a monitor to resumed (unpaused) status when calling EditMonitor.
+// StatusResume is the status value which sets a monitor to resumed (unpaused)
+// status when calling EditMonitor.
 var StatusResume = "1"
 
 // Client represents an UptimeRobot client. If the Debug field is set to
@@ -167,12 +158,12 @@ type Monitor struct {
 
 const monitorTemplate = `ID: {{ .ID }}
 Name: {{ .FriendlyName }}
-URL: {{ .URL }}
-Type: {{ .FriendlyType }}
-Subtype: {{ .FriendlySubType }}
-Port: {{ .Port}}
-Keyword type: {{ .FriendlyKeywordType }}
-Keyword value: {{ .KeywordValue }}`
+URL: {{ .URL -}}
+{{ if .Port }}{{ printf "\nPort: %d" .Port }}{{ end -}}
+{{ if .Type }}{{ printf "\nType: %s" .FriendlyType }}{{ end -}}
+{{ if .SubType }}{{ printf "\nSubtype: %s" .FriendlySubType }}{{ end -}}
+{{ if .KeywordType }}{{ printf "\nKeywordType: %s" .FriendlyKeywordType }}{{ end -}}
+{{ if .KeywordValue }}{{ printf "\nKeyword: %s" .KeywordValue }}{{ end }}`
 
 // String returns a pretty-printed version of the monitor.
 func (m Monitor) String() string {
@@ -181,33 +172,50 @@ func (m Monitor) String() string {
 
 // FriendlyType returns a human-readable name for the monitor type.
 func (m Monitor) FriendlyType() string {
-	name, ok := MonitorTypes[m.Type]
-	if !ok {
+	switch m.Type {
+	case TypeHTTP:
+		return "HTTP"
+	case TypeKeyword:
+		return "Keyword"
+	case TypePing:
+		return "Ping"
+	case TypePort:
+		return "Port"
+	default:
 		return fmt.Sprintf("%v", m.Type)
 	}
-	return name
 }
 
 // FriendlySubType returns a human-readable name for the monitor subtype,
 // including the port number.
 func (m Monitor) FriendlySubType() string {
-	name, ok := MonitorSubTypes[m.SubType]
-	if !ok {
+	switch m.SubType {
+	case SubTypeHTTP:
+		return "HTTP (80)"
+	case SubTypeHTTPS:
+		return "HTTPS (443)"
+	case SubTypeFTP:
+		return "FTP (21)"
+	case SubTypeSMTP:
+		return "SMTP (25)"
+	case SubTypePOP3:
+		return "POP3 (110)"
+	case SubTypeIMAP:
+		return "IMAP (143)"
+	case SubTypeCustomPort:
+		return fmt.Sprintf("Custom port (%d)", m.Port)
+	default:
 		return fmt.Sprintf("%v", m.SubType)
 	}
-	if name == "Custom Port" {
-		return fmt.Sprintf("%s (%v)", name, m.Port)
-	}
-	return name
 }
 
 // FriendlyKeywordType returns a human-readable name for the monitor keyword type.
 func (m Monitor) FriendlyKeywordType() string {
 	switch m.KeywordType {
-	case 1:
-		return "exists"
-	case 2:
-		return "not exists"
+	case KeywordExists:
+		return "Exists"
+	case KeywordNotExists:
+		return "NotExists"
 	default:
 		return fmt.Sprintf("%v", m.KeywordType)
 	}
