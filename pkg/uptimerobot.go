@@ -57,13 +57,13 @@ const KeywordExists = 1
 // is not found.
 const KeywordNotExists = 2
 
-// StatusPause is the status value which sets a monitor to paused status when
+// StatusPaused is the status value which sets a monitor to paused status when
 // calling EditMonitor.
-var StatusPause = "0"
+const StatusPaused = 0
 
-// StatusResume is the status value which sets a monitor to resumed (unpaused)
+// StatusResumed is the status value which sets a monitor to resumed (unpaused)
 // status when calling EditMonitor.
-var StatusResume = "1"
+const StatusResumed = 1
 
 // Client represents an UptimeRobot client. If the Debug field is set to
 // an io.Writer, then the client will dump API requests to it instead of
@@ -395,7 +395,7 @@ func (c *Client) EnsureMonitor(m Monitor) (Monitor, error) {
 // set to the ID of the monitor, or an error if the operation failed.
 func (c *Client) PauseMonitor(m Monitor) (Monitor, error) {
 	r := Response{}
-	data := []byte(fmt.Sprintf("{\"id\": \"%d\",\"status\": %q}", m.ID, StatusPause))
+	data := []byte(fmt.Sprintf("{\"id\": \"%d\",\"status\": %d}", m.ID, StatusPaused))
 	if err := c.MakeAPICall("editMonitor", &r, data); err != nil {
 		return Monitor{}, err
 	}
@@ -408,7 +408,7 @@ func (c *Client) PauseMonitor(m Monitor) (Monitor, error) {
 // failed.
 func (c *Client) StartMonitor(m Monitor) (Monitor, error) {
 	r := Response{}
-	data := []byte(fmt.Sprintf("{\"id\": \"%d\",\"status\": %q}", m.ID, StatusResume))
+	data := []byte(fmt.Sprintf("{\"id\": \"%d\",\"status\": %d}", m.ID, StatusResumed))
 	if err := c.MakeAPICall("editMonitor", &r, data); err != nil {
 		return Monitor{}, err
 	}
