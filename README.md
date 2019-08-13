@@ -2,7 +2,7 @@
 
 # uptimerobot
 
-`uptimerobot` is a Go library and command-line client for the [UptimeRobot](https://uptimerobot.com/) website monitoring service. It allows you to search for existing monitors, delete monitors, create new monitors, and also inspect your account details and alert contacts.
+`uptimerobot` is a Go library and command-line client for the [Uptime Robot](https://uptimerobot.com/) website monitoring service. It allows you to search for existing monitors, delete monitors, create new monitors, and also inspect your account details and alert contacts.
 
 ## Installing the command-line client
 
@@ -30,7 +30,7 @@ uptimerobot -h
 
 ## Setting your API key
 
-To use the client with your UptimeRobot account, you will need the Main API Key for the account. Go to the [UptimeRobot Settings page](https://uptimerobot.com/dashboard.php#mySettings) and click 'Show/hide it' under the 'Main API Key' section.
+To use the client with your Uptime Robot account, you will need the Main API Key for the account. Go to the [Uptime Robot Settings page](https://uptimerobot.com/dashboard.php#mySettings) and click 'Show/hide it' under the 'Main API Key' section.
 
 There are three ways to pass your API key to the client: in a config file, in an environment variable, or on the command line.
 
@@ -124,9 +124,6 @@ ID: 780689017
 Name: Example.com website
 URL: https://www.example.com/
 Type: HTTP
-Subtype:
-Keyword type: 0
-Keyword value:
 ```
 
 (Use `uptimerobot monitors` to list all existing monitors.)
@@ -182,10 +179,10 @@ To do this, run `uptimerobot ensure URL NAME`:
 
 ```
 uptimerobot ensure https://www.example.com/ "Example.com website"
-Monitor ID 780689018
+Monitor ID 780689018 ensured
 ```
 
-If a monitor already existed for the same URL, its ID will be returned. Otherwise, a new monitor will be created, and its ID returned.
+If the monitor doesn't already exist, it will be created.
 
 You can use the `-c` flag to add alert contacts, just as for the `uptimerobot new` command.
 
@@ -199,7 +196,7 @@ When things aren't going quite as they should, you can add the `--debug` flag to
 
 ## Using the Go library
 
-If the command-line client doesn't do quite what you need, or if you want to use UptimeRobot API access in your own programs, import the library using:
+If the command-line client doesn't do quite what you need, or if you want to use Uptime Robot API access in your own programs, import the library using:
 
 ```go
 import "github.com/bitfield/uptimerobot/pkg"
@@ -211,10 +208,10 @@ Create a new `Client` object by calling `uptimerobot.New()` with an API key:
 client = uptimerobot.New(apiKey)
 ```
 
-Once you have a client, you can use it to call various UptimeRobot API features:
+Once you have a client, you can use it to call various Uptime Robot API features:
 
 ```go
-monitors, err := client.GetMonitors()
+monitors, err := client.AllMonitors()
 if err != nil {
         log.Fatal(err)
 }
@@ -235,20 +232,15 @@ type Monitor struct {
 }
 ```
 
-For example, to delete a monitor, first create a new `Monitor` variable and set its `ID` field to the ID of the monitor you want to delete. Then pass it to `DeleteMonitor()`:
+For example, to delete a monitor, find the ID of the monitor you want to delete, and pass it to `DeleteMonitor()`:
 
 ```go
-m := uptimerobot.Monitor{
-        ID: 780689017,
-}
-new, err := client.DeleteMonitor(m)
-if err != nil {
+if err := client.DeleteMonitor(780689017); err != nil {
         log.Fatal(err)
 }
-fmt.Println(new.ID)
 ```
 
-To call an UptimeRobot API verb not implemented by the `uptimerobot` library, you can use the `MakeAPICall()` method directly, passing it some suitable JSON data:
+To call an Uptime Robot API verb not implemented by the `uptimerobot` library, you can use the `MakeAPICall()` method directly, passing it some suitable JSON data:
 
 ```go
 r := uptimerobot.Response{}
@@ -272,7 +264,7 @@ type Response struct {
 }
 ```
 
-For example, when deleting a monitor, as in the above example, the ID of the deleted monitor will be returned as `r.Monitor.ID`.
+For example, when creating a new monitor, the ID of the created monitor will be returned as `r.Monitor.ID`.
 
 If things aren't working as you expect, you can use the debug facility to dump the raw request and response data from every API call. To do this, set the environment variable `UPTIMEROBOT_DEBUG`, which will dump debug information to the standard output, or set `client.Debug` to any `io.Writer` to send output to that writer.
 
@@ -314,6 +306,6 @@ Vary: Accept-Encoding
 
 If you find a bug in the `uptimerobot` client or library, please [open an issue](https://github.com/bitfield/uptimerobot/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.
 
-Not all the functionality of the UptimeRobot API is implemented yet.
+Not all the functionality of the Uptime Robot API is implemented yet.
 
 Pull requests welcome!

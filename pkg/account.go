@@ -1,6 +1,6 @@
 package uptimerobot
 
-// Account represents an UptimeRobot account.
+// Account represents an Uptime Robot account.
 type Account struct {
 	Email           string `json:"email"`
 	MonitorLimit    int    `json:"monitor_limit"`

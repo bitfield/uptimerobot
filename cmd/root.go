@@ -13,8 +13,8 @@ import (
 // RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
 	Use:   "uptimerobot",
-	Short: "uptimerobot is a client for the UptimeRobot V2 API",
-	Long: `uptimerobot is a command-line client for the UptimeRobot monitoring
+	Short: "uptimerobot is a client for the Uptime Robot V2 API",
+	Long: `uptimerobot is a command-line client for the Uptime Robot monitoring
 service. It allows you to search for existing monitors, delete monitors,
 and create new monitors. You can also inspect your account details and
 any alert contacts you have configured.
@@ -52,7 +52,7 @@ func init() {
 			client.Debug = os.Stdout
 		}
 	})
-	RootCmd.PersistentFlags().StringVar(&apiKey, "apiKey", "", "UptimeRobot API key")
+	RootCmd.PersistentFlags().StringVar(&apiKey, "apiKey", "", "Uptime Robot API key")
 	viper.BindPFlag("apiKey", RootCmd.PersistentFlags().Lookup("apiKey"))
 	viper.BindEnv("apiKey", "UPTIMEROBOT_API_KEY")
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Debug mode (show API request and response)")

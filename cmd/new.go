@@ -25,11 +25,11 @@ var newCmd = &cobra.Command{
 		if strings.HasPrefix(m.URL, "https") {
 			m.Port = 443
 		}
-		new, err := client.NewMonitor(m)
+		ID, err := client.CreateMonitor(m)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("New monitor created with ID %d\n", new.ID)
+		fmt.Printf("New monitor created with ID %d\n", ID)
 	},
 }
 

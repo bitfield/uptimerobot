@@ -18,7 +18,7 @@ var getCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		monitor, err := client.GetMonitorByID(ID)
+		monitor, err := client.GetMonitor(ID)
 		if err != nil {
 			log.Fatal(err)
 		}

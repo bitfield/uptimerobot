@@ -71,7 +71,7 @@ func TestUnmarshalMonitor(t *testing.T) {
 
 }
 
-func TestNewMonitor(t *testing.T) {
+func TestCreate(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +115,7 @@ func TestNewMonitor(t *testing.T) {
 		io.Copy(w, data)
 	}))
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	create := Monitor{
 		FriendlyName:  "My test monitor",
@@ -124,14 +124,11 @@ func TestNewMonitor(t *testing.T) {
 		Port:          80,
 		AlertContacts: []string{"3", "5", "7"},
 	}
-	got, err := client.NewMonitor(create)
+	got, err := client.CreateMonitor(create)
 	if err != nil {
 		t.Error(err)
 	}
-	want := Monitor{
-		ID:   777810874,
-		Type: TypeHTTP,
-	}
+	var want int64 = 777810874
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
 	}
@@ -142,7 +139,7 @@ func TestGetAccountDetails(t *testing.T) {
 	client := New("dummy")
 	ts := cannedResponseServer(t, "testdata/getAccountDetails.json")
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	got, err := client.GetAccountDetails()
 	if err != nil {
@@ -161,12 +158,12 @@ func TestGetAccountDetails(t *testing.T) {
 	}
 }
 
-func TestGetAlertContacts(t *testing.T) {
+func TestAllAlertContacts(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
 	ts := cannedResponseServer(t, "testdata/getAlertContacts.json")
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	want := []AlertContact{
 		{
@@ -184,7 +181,7 @@ func TestGetAlertContacts(t *testing.T) {
 			Value:        "sampleTwitterAccount",
 		},
 	}
-	got, err := client.GetAlertContacts()
+	got, err := client.AllAlertContacts()
 	if err != nil {
 		t.Error(err)
 	}
@@ -198,7 +195,7 @@ func TestGetMonitorByID(t *testing.T) {
 	client := New("dummy")
 	ts := cannedResponseServer(t, "testdata/getMonitorByID.json")
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	want := Monitor{
 		ID:           777749809,
@@ -207,7 +204,7 @@ func TestGetMonitorByID(t *testing.T) {
 		Type:         TypeHTTP,
 		Port:         80,
 	}
-	got, err := client.GetMonitorByID(want.ID)
+	got, err := client.GetMonitor(want.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -221,7 +218,7 @@ func TestGetMonitors(t *testing.T) {
 	client := New("dummy")
 	ts := cannedResponseServer(t, "testdata/getMonitors.json")
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	want := []Monitor{
 		{
@@ -254,7 +251,7 @@ func TestGetMonitors(t *testing.T) {
 			Port:         8000,
 		},
 	}
-	got, err := client.GetMonitors()
+	got, err := client.AllMonitors()
 	if err != nil {
 		t.Error(err)
 	}
@@ -268,7 +265,7 @@ func TestGetMonitorsBySearch(t *testing.T) {
 	client := New("dummy")
 	ts := cannedResponseServer(t, "testdata/getMonitorsBySearch.json")
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	want := []Monitor{
 		{
@@ -278,7 +275,7 @@ func TestGetMonitorsBySearch(t *testing.T) {
 			Type:         TypeHTTP,
 		},
 	}
-	got, err := client.GetMonitorsBySearch("My Web Page")
+	got, err := client.SearchMonitors("My Web Page")
 	if err != nil {
 		t.Error(err)
 	}
@@ -292,7 +289,7 @@ func TestPauseMonitor(t *testing.T) {
 	client := New("dummy")
 	ts := cannedResponseServer(t, "testdata/pauseMonitor.json")
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	want := Monitor{
 		ID: 677810870,
@@ -311,7 +308,7 @@ func TestStartMonitor(t *testing.T) {
 	client := New("dummy")
 	ts := cannedResponseServer(t, "testdata/startMonitor.json")
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
 	want := Monitor{
 		ID: 677810870,
@@ -325,20 +322,21 @@ func TestStartMonitor(t *testing.T) {
 	}
 }
 
-func TestEnsureMonitor(t *testing.T) {
+func TestEnsure(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
 	ts := cannedResponseServer(t, "testdata/getMonitorsBySearch.json")
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
-	want := Monitor{
+	mon := Monitor{
 		ID:           777712827,
 		FriendlyName: "My Web Page",
 		URL:          "http://mywebpage.com/",
 		Type:         TypeHTTP,
 	}
-	got, err := client.EnsureMonitor(want)
+	want := mon.ID
+	got, err := client.EnsureMonitor(mon)
 	if err != nil {
 		t.Error(err)
 	}
@@ -352,18 +350,11 @@ func TestDeleteMonitor(t *testing.T) {
 	client := New("dummy")
 	ts := cannedResponseServer(t, "testdata/deleteMonitor.json")
 	defer ts.Close()
-	client.http = ts.Client()
+	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
-	want := Monitor{
-		ID:   777810874,
-		Type: TypeHTTP,
-	}
-	got, err := client.DeleteMonitor(want)
-	if err != nil {
+	var want int64 = 777810874
+	if err := client.DeleteMonitor(want); err != nil {
 		t.Error(err)
-	}
-	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
 	}
 }
 

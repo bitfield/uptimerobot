@@ -20,11 +20,11 @@ var ensureCmd = &cobra.Command{
 			Type:          uptimerobot.TypeHTTP,
 			AlertContacts: contacts,
 		}
-		result, err := client.EnsureMonitor(m)
+		ID, err := client.EnsureMonitor(m)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Monitor ID %d\n", result.ID)
+		fmt.Printf("Monitor ID %d ensured\n", ID)
 	},
 }
 

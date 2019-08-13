@@ -15,22 +15,36 @@ import (
 	"time"
 )
 
-// Client represents an UptimeRobot client. If the Debug field is set to
-// an io.Writer, then the client will dump API requests to it instead of
-// calling the real API.
+// Client represents an Uptime Robot client.
+//
+// The HTTPClient field holds a pointer to the HTTP client which will be used to
+// make the requests; the default client is configured with a timeout of 10
+// seconds. If you would like to use a client with different settings, create an
+// http.Client with the parameters you want, and assign it to the HTTPClient
+// field.
+//
+// If the Debug field is set to any io.Writer (for example os.Stdout), then the
+// client will dump all HTTP requests and responses to the supplied writer.
+//
+// The URL field determines where requests will be sent; by default this is
+// 'https://api.uptimerobot.com', but if you want to use an alternate or test
+// server URL, set it here. For example, if you are writing tests which use the
+// Uptime Robot client and you do not want it to make network calls, create an
+// httptest.NewTLSServer and set the URL field to the test server's URL.
 type Client struct {
-	apiKey string
-	http   *http.Client
-	URL    string
-	Debug  io.Writer
+	apiKey     string
+	HTTPClient *http.Client
+	URL        string
+	Debug      io.Writer
 }
 
-// New takes an UptimeRobot API key and returns a Client.
+// New takes an Uptime Robot API key and returns a Client. See the documentation
+// for the Client type for configuration options.
 func New(apiKey string) Client {
 	client := Client{
-		apiKey: apiKey,
-		URL:    "https://api.uptimerobot.com",
-		http:   &http.Client{Timeout: 10 * time.Second},
+		apiKey:     apiKey,
+		URL:        "https://api.uptimerobot.com",
+		HTTPClient: &http.Client{Timeout: 10 * time.Second},
 	}
 	if os.Getenv("UPTIMEROBOT_DEBUG") != "" {
 		client.Debug = os.Stdout
@@ -38,7 +52,7 @@ func New(apiKey string) Client {
 	return client
 }
 
-// Error represents an API error.
+// Error represents an API error response.
 type Error map[string]interface{}
 
 // Response represents an API response.
@@ -60,10 +74,9 @@ func (c *Client) GetAccountDetails() (Account, error) {
 	return r.Account, nil
 }
 
-// GetMonitorByID takes an int64 representing the ID number of an existing monitor,
-// and returns the corresponding monitor with the rest of its metadata, or an
-// error if the operation failed.
-func (c *Client) GetMonitorByID(ID int64) (Monitor, error) {
+// GetMonitor takes an int64 representing the ID number of an existing monitor,
+// and returns the corresponding Monitor, or an error if the operation failed.
+func (c *Client) GetMonitor(ID int64) (Monitor, error) {
 	r := Response{}
 	data := []byte(fmt.Sprintf("{\"monitors\": \"%d\"}", ID))
 	if err := c.MakeAPICall("getMonitors", &r, data); err != nil {
@@ -75,8 +88,9 @@ func (c *Client) GetMonitorByID(ID int64) (Monitor, error) {
 	return r.Monitors[0], nil
 }
 
-// GetMonitors returns a slice of Monitors representing the existing monitors.
-func (c *Client) GetMonitors() (monitors []Monitor, err error) {
+// AllMonitors returns a slice of Monitors representing the monitors currently
+// configured in your Uptime Robot account.
+func (c *Client) AllMonitors() (monitors []Monitor, err error) {
 	r := Response{}
 	if err := c.MakeAPICall("getMonitors", &r, []byte{}); err != nil {
 		return monitors, err
@@ -84,59 +98,58 @@ func (c *Client) GetMonitors() (monitors []Monitor, err error) {
 	return r.Monitors, nil
 }
 
-// GetMonitorsBySearch returns a slice of Monitors whose FriendlyName or URL
+// SearchMonitors returns a slice of Monitors whose FriendlyName or URL
 // match the search string.
-func (c *Client) GetMonitorsBySearch(s string) (monitors []Monitor, err error) {
+func (c *Client) SearchMonitors(s string) ([]Monitor, error) {
 	r := Response{}
 	data := []byte(`{"search": "` + s + `"}`)
 	if err := c.MakeAPICall("getMonitors", &r, data); err != nil {
-		return monitors, err
+		return []Monitor{}, err
 	}
 	return r.Monitors, nil
 }
 
-// GetAlertContacts returns all the AlertContacts associated with the account.
-func (c *Client) GetAlertContacts() (contacts []AlertContact, err error) {
+// AllAlertContacts returns all the AlertContacts associated with the account.
+func (c *Client) AllAlertContacts() ([]AlertContact, error) {
 	r := Response{}
 	if err := c.MakeAPICall("getAlertContacts", &r, []byte{}); err != nil {
-		return contacts, err
+		return []AlertContact{}, err
 	}
 	return r.AlertContacts, nil
 }
 
-// NewMonitor takes a Monitor and creates a new UptimeRobot monitor with the
-// specified details. It returns a Monitor with the ID field set to the ID of
-// the newly created monitor, or an error if the operation failed.
-func (c *Client) NewMonitor(m Monitor) (Monitor, error) {
+// CreateMonitor takes a Monitor and creates a new Uptime Robot monitor with the
+// specified details. It returns the ID of the newly created monitor, or an
+// error if the operation failed.
+func (c *Client) CreateMonitor(m Monitor) (int64, error) {
 	r := Response{}
 	data, err := json.Marshal(m)
 	if err != nil {
-		return Monitor{}, err
+		return 0, err
 	}
 	if err := c.MakeAPICall("newMonitor", &r, data); err != nil {
-		return Monitor{}, err
+		return 0, err
 	}
-	return r.Monitor, nil
+	return r.Monitor.ID, nil
 }
 
-// EnsureMonitor takes a Monitor and creates a new UptimeRobot monitor with the
+// EnsureMonitor takes a Monitor and creates a new Uptime Robot monitor with the
 // specified details, if a monitor for the same URL does not already exist. It
-// returns a Monitor with the ID field set to the ID of the newly created
-// monitor or the existing monitor if it already existed, or an error if the
-// operation failed.
-func (c *Client) EnsureMonitor(m Monitor) (Monitor, error) {
-	monitors, err := c.GetMonitorsBySearch(m.URL)
+// returns the ID of the newly created monitor or the existing monitor if it
+// already existed, or an error if the operation failed.
+func (c *Client) EnsureMonitor(m Monitor) (int64, error) {
+	monitors, err := c.SearchMonitors(m.URL)
 	if err != nil {
-		return Monitor{}, err
+		return 0, err
 	}
 	if len(monitors) == 0 {
-		new, err := c.NewMonitor(m)
+		ID, err := c.CreateMonitor(m)
 		if err != nil {
-			return Monitor{}, err
+			return 0, err
 		}
-		return new, nil
+		return ID, nil
 	}
-	return monitors[0], nil
+	return monitors[0].ID, nil
 }
 
 // PauseMonitor takes a Monitor with the ID field set, and attempts to set the
@@ -164,19 +177,17 @@ func (c *Client) StartMonitor(m Monitor) (Monitor, error) {
 	return r.Monitor, nil
 }
 
-// DeleteMonitor takes a Monitor with the ID field set, and deletes the
-// corresponding monitor. It returns a Monitor with the ID field set to the ID
-// of the deleted monitor, or an error if the operation failed.
-func (c *Client) DeleteMonitor(m Monitor) (Monitor, error) {
-	r := Response{}
-	data := []byte(fmt.Sprintf("{\"id\": \"%d\"}", m.ID))
-	if err := c.MakeAPICall("deleteMonitor", &r, data); err != nil {
-		return Monitor{}, err
+// DeleteMonitor takes a monitor ID and deletes the corresponding monitor. It returns
+// an error if the operation failed.
+func (c *Client) DeleteMonitor(ID int64) error {
+	data := []byte(fmt.Sprintf("{\"id\": \"%d\"}", ID))
+	if err := c.MakeAPICall("deleteMonitor", &Response{}, data); err != nil {
+		return err
 	}
-	return r.Monitor, nil
+	return nil
 }
 
-// MakeAPICall calls the UptimeRobot API with the specified verb and data, and
+// MakeAPICall calls the Uptime Robot API with the specified verb and data, and
 // stores the returned data in the Response struct.
 func (c *Client) MakeAPICall(verb string, r *Response, data []byte) error {
 	data, err := decorateRequestData(data, c.apiKey)
@@ -197,7 +208,7 @@ func (c *Client) MakeAPICall(verb string, r *Response, data []byte) error {
 		fmt.Fprintln(c.Debug, string(requestDump))
 		fmt.Fprintln(c.Debug)
 	}
-	resp, err := c.http.Do(req)
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("HTTP request failed: %v", err)
 	}

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Monitor represents an UptimeRobot monitor.
+// Monitor represents an Uptime Robot monitor.
 type Monitor struct {
 	ID            int64    `json:"id,omitempty"`
 	FriendlyName  string   `json:"friendly_name"`

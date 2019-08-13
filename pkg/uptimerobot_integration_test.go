@@ -36,31 +36,29 @@ func exampleMonitor(name string) Monitor {
 
 func TestCreateGetIntegration(t *testing.T) {
 	t.Parallel()
-	want := exampleMonitor("create_test")
-	result, err := client.NewMonitor(want)
+	mon := exampleMonitor("create_test")
+	ID, err := client.CreateMonitor(mon)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteMonitor(result)
-	got, err := client.GetMonitorByID(result.ID)
-	want.ID = result.ID
-	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
+	defer client.DeleteMonitor(ID)
+	got, err := client.GetMonitor(ID)
+	if !cmp.Equal(ID, got.ID) {
+		t.Error(cmp.Diff(ID, got.ID))
 	}
 }
 
 func TestDeleteIntegration(t *testing.T) {
 	t.Parallel()
 	toDelete := exampleMonitor("delete_test")
-	result, err := client.NewMonitor(toDelete)
+	ID, err := client.CreateMonitor(toDelete)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.DeleteMonitor(result)
-	if err != nil {
+	if err = client.DeleteMonitor(ID); err != nil {
 		t.Error(err)
 	}
-	_, err = client.GetMonitorByID(result.ID)
+	_, err = client.GetMonitor(ID)
 	if err == nil {
 		t.Error("want error getting deleted check, but got nil")
 	}
