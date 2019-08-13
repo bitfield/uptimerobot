@@ -74,6 +74,8 @@ func TestUnmarshalMonitor(t *testing.T) {
 func TestCreate(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
+	// force test coverage of the client's dump functionality
+	client.Debug = ioutil.Discard
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Errorf("want POST request, got %q", r.Method)
@@ -325,7 +327,7 @@ func TestStartMonitor(t *testing.T) {
 func TestEnsure(t *testing.T) {
 	t.Parallel()
 	client := New("dummy")
-	ts := cannedResponseServer(t, "testdata/getMonitorsBySearch.json")
+	ts := cannedResponseServer(t, "testdata/ensure.json")
 	defer ts.Close()
 	client.HTTPClient = ts.Client()
 	client.URL = ts.URL
@@ -335,7 +337,11 @@ func TestEnsure(t *testing.T) {
 		URL:          "http://mywebpage.com/",
 		Type:         TypeHTTP,
 	}
-	want := mon.ID
+	// The client will do a SearchMonitors and get a canned response from
+	// the test server containing no matches. It will now try to create the
+	// monitor, and the test server will just respond with an empty body and
+	// OK. The resulting monitor will have an ID of 0.
+	want := int64(0)
 	got, err := client.EnsureMonitor(mon)
 	if err != nil {
 		t.Error(err)
