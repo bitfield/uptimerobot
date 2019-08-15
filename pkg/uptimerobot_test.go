@@ -521,7 +521,8 @@ func TestFriendlyKeywordType(t *testing.T) {
 	}
 }
 
-// cannedResponseServer returns a test TLS server which
+// cannedResponseServer returns a test TLS server which responds to any request
+// with a specified file of canned JSON data.
 func cannedResponseServer(t *testing.T, path string) *httptest.Server {
 	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
