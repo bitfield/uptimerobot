@@ -216,50 +216,19 @@ func TestGetMonitorByID(t *testing.T) {
 	}
 }
 
-func fakeGetMonitorsPagingHandler(req *http.Request) (*http.Response, error) {
-	var (
-		data io.ReadCloser
-		err  error
-	)
-	req.ParseForm()
-	offset := req.PostForm.Get("offset")
-	if offset == "0" || offset == "" {
-		data, err = os.Open("testdata/getMonitorsPage1.json")
-	} else {
-		data, err = os.Open("testdata/getMonitorsPage2.json")
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
-}
-
 func TestGetMonitorsPages(t *testing.T) {
 	t.Parallel()
-	const (
-		baseName    = "monitor"
-		numMonitors = 100
-	)
-	want := make([]string, numMonitors)
-	for i := 0; i < numMonitors; i++ {
-		want[i] = fmt.Sprintf("%s-%d", baseName, i+1)
-	}
 	client := New("dummy")
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		bodyMap := map[string]interface{}{}
 		if err := json.NewDecoder(r.Body).Decode(&bodyMap); err != nil {
 			t.Fatal(err)
 		}
-		var data *os.File
-		var err error
-		if bodyMap["offset"] == "0" || bodyMap["offset"] == "" {
-			data, err = os.Open("testdata/getMonitorsPage1.json")
-		} else {
-			data, err = os.Open("testdata/getMonitorsPage2.json")
+		datafile := "testdata/getMonitorsPage1.json"
+		if bodyMap["offset"] != "0" {
+			datafile = "testdata/getMonitorsPage2.json"
 		}
+		data, err := os.Open(datafile)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -274,12 +243,14 @@ func TestGetMonitorsPages(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(monitors) != numMonitors {
-		t.Errorf("Wanted %d monitors, but got %d", numMonitors, len(monitors))
+	if len(monitors) != 100 {
+		t.Errorf("Wanted 100 monitors, but got %d", len(monitors))
 	}
 	for i, m := range monitors {
-		if m.FriendlyName != want[i] {
-			t.Errorf("GetMonitors[%d] => %q, want %q", i, m.FriendlyName, want[i])
+		want := fmt.Sprintf("monitor-%d", i+1)
+		got := m.FriendlyName
+		if !cmp.Equal(want, got) {
+			t.Error(cmp.Diff(want, got))
 		}
 	}
 }
