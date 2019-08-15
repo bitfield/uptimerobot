@@ -5,7 +5,6 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -19,14 +18,10 @@ var deleteCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		m := uptimerobot.Monitor{
-			ID: ID,
-		}
-		new, err := client.DeleteMonitor(m)
-		if err != nil {
+		if err = client.DeleteMonitor(ID); err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Monitor ID %d deleted\n", new.ID)
+		fmt.Printf("Monitor ID %d successfully deleted\n", ID)
 	},
 }
 

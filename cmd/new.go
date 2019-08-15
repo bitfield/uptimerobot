@@ -3,8 +3,9 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strings"
 
-	"github.com/bitfield/uptimerobot/pkg"
+	uptimerobot "github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -17,14 +18,18 @@ var newCmd = &cobra.Command{
 		m := uptimerobot.Monitor{
 			URL:           args[0],
 			FriendlyName:  args[1],
-			Type:          uptimerobot.MonitorType("HTTP"),
+			Type:          uptimerobot.TypeHTTP,
 			AlertContacts: contacts,
+			Port:          80,
 		}
-		new, err := client.NewMonitor(m)
+		if strings.HasPrefix(m.URL, "https") {
+			m.Port = 443
+		}
+		ID, err := client.CreateMonitor(m)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("New monitor created with ID %d\n", new.ID)
+		fmt.Printf("New monitor created with ID %d\n", ID)
 	},
 }
 

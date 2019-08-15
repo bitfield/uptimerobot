@@ -14,7 +14,7 @@ var searchCmd = &cobra.Command{
 	Long:  `Lists all monitors matching a search string`,
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		monitors, err := client.GetMonitorsBySearch(args[0])
+		monitors, err := client.SearchMonitors(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}

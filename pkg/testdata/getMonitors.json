@@ -16,7 +16,7 @@
             "keyword_value": "",
             "http_username": "",
             "http_password": "",
-            "port": "",
+            "port": "80",
             "interval": 900,
             "status": 1,
             "create_datetime": 1462565497,

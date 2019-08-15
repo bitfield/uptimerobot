@@ -12,7 +12,7 @@ var contactsCmd = &cobra.Command{
 	Short: "list alert contacts",
 	Long:  `Show all alert contacts associated with the account`,
 	Run: func(cmd *cobra.Command, args []string) {
-		contacts, err := client.GetAlertContacts()
+		contacts, err := client.AllAlertContacts()
 		if err != nil {
 			log.Fatal(err)
 		}

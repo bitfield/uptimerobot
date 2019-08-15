@@ -1,352 +1,446 @@
 package uptimerobot
 
 import (
-	"bytes"
+	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
-type MockHTTPClient struct {
-	DoFunc func(req *http.Request) (*http.Response, error)
-}
-
-func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	if m.DoFunc != nil {
-		return m.DoFunc(req)
+func TestMarshalMonitor(t *testing.T) {
+	t.Parallel()
+	m := Monitor{
+		ID:            777749809,
+		FriendlyName:  "Google",
+		URL:           "http://www.google.com",
+		Type:          TypeHTTP,
+		Port:          80,
+		AlertContacts: []string{"3", "5", "7"},
 	}
-	return &http.Response{}, nil
+	got, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		t.Error(err)
+	}
+	want, err := ioutil.ReadFile("testdata/marshal.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Convert the actual data and the expected data to maps, for ease of
+	// comparison
+	wantMap := map[string]interface{}{}
+	err = json.Unmarshal(want, &wantMap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotMap := map[string]interface{}{}
+	err = json.Unmarshal(got, &gotMap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(wantMap, gotMap) {
+		t.Error(cmp.Diff(wantMap, gotMap))
+	}
 }
 
-func fakeAccountDetailsHandler(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{
-			"stat": "ok",
-			"account": {
-				"email": "test@domain.com",
-				"monitor_limit": 50,
-				"monitor_interval": 1,
-				"up_monitors": 1,
-				"down_monitors": 0,
-				"paused_monitors": 2
-			}
-		      }`)),
-	}, nil
+func TestUnmarshalMonitor(t *testing.T) {
+	t.Parallel()
+	want := Monitor{
+		ID:           777749809,
+		FriendlyName: "Google",
+		URL:          "http://www.google.com",
+		Type:         TypeHTTP,
+		Port:         80,
+	}
+	data, err := ioutil.ReadFile("testdata/unmarshal.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := Monitor{}
+	err = got.UnmarshalJSON(data)
+	if err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+
+}
+
+func TestCreate(t *testing.T) {
+	t.Parallel()
+	client := New("dummy")
+	// force test coverage of the client's dump functionality
+	client.Debug = ioutil.Discard
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("want POST request, got %q", r.Method)
+		}
+		wantURL := "/v2/newMonitor"
+		if r.URL.EscapedPath() != wantURL {
+			t.Errorf("want %q, got %q", wantURL, r.URL.EscapedPath())
+		}
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.Body.Close()
+		want, err := ioutil.ReadFile("testdata/requestNewMonitor.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Convert the received body and the expected body to maps, for
+		// ease of comparison
+		wantMap := map[string]interface{}{}
+		err = json.Unmarshal(want, &wantMap)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bodyMap := map[string]interface{}{}
+		err = json.Unmarshal(body, &bodyMap)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !cmp.Equal(wantMap, bodyMap) {
+			t.Error(cmp.Diff(wantMap, bodyMap))
+		}
+		w.WriteHeader(http.StatusOK)
+		data, err := os.Open("testdata/newMonitor.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	create := Monitor{
+		FriendlyName:  "My test monitor",
+		URL:           "http://example.com",
+		Type:          TypeHTTP,
+		Port:          80,
+		AlertContacts: []string{"3", "5", "7"},
+	}
+	got, err := client.CreateMonitor(create)
+	if err != nil {
+		t.Error(err)
+	}
+	var want int64 = 777810874
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
 }
 
 func TestGetAccountDetails(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeAccountDetailsHandler,
-	}
-	c.http = &mockClient
-	a, err := c.GetAccountDetails()
+	t.Parallel()
+	client := New("dummy")
+	ts := cannedResponseServer(t, "testdata/getAccountDetails.json")
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	got, err := client.GetAccountDetails()
 	if err != nil {
 		t.Error(err)
 	}
-	wantEmail := "test@domain.com"
-	if a.Email != wantEmail {
-		t.Errorf("GetAccountDetails() => email %q, want %q", a.Email, wantEmail)
+	want := Account{
+		Email:           "test@domain.com",
+		MonitorLimit:    50,
+		MonitorInterval: 1,
+		UpMonitors:      1,
+		DownMonitors:    0,
+		PausedMonitors:  2,
+	}
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
 }
 
-func badAccountDetailsHandler(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{
-			"stat": "false",
-			"error": {"message": "Somebody set up us the bomb"}}`)),
-	}, nil
-}
-
-func TestAPIErrorResponse(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: badAccountDetailsHandler,
+func TestAllAlertContacts(t *testing.T) {
+	t.Parallel()
+	client := New("dummy")
+	ts := cannedResponseServer(t, "testdata/getAlertContacts.json")
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	want := []AlertContact{
+		{
+			ID:           "0993765",
+			FriendlyName: "John Doe",
+			Type:         2,
+			Status:       1,
+			Value:        "johndoe@gmail.com",
+		},
+		{
+			ID:           "2403924",
+			FriendlyName: "My Twitter",
+			Type:         3,
+			Status:       0,
+			Value:        "sampleTwitterAccount",
+		},
 	}
-	c.http = &mockClient
-	_, err := c.GetAccountDetails()
-	if err == nil {
-		t.Error("API call with error response returned non-nil error")
-	}
-}
-
-func TestDebugFlag(t *testing.T) {
-	c := New("dummy")
-	out := &bytes.Buffer{}
-	c.Debug = out
-	mockClient := MockHTTPClient{
-		DoFunc: fakeAccountDetailsHandler,
-	}
-	c.http = &mockClient
-	_, err := c.GetAccountDetails()
-	if err != nil {
-		t.Error("GetAccountDetails() returned non-nil in debug mode")
-	}
-	want := "POST /v2/getAccountDetails HTTP/1.1"
-	if !strings.Contains(out.String(), want) {
-		t.Errorf("GetAccountDetails() debugged %v, want %q ...", out.String(), want)
-	}
-}
-
-func fakeGetAlertContactsHandler(req *http.Request) (*http.Response, error) {
-	data, err := os.Open("testdata/getAlertContacts.json")
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
-}
-func TestGetAlertContacts(t *testing.T) {
-	want := []string{"John Doe", "My Twitter"}
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetAlertContactsHandler,
-	}
-	c.http = &mockClient
-	contacts, err := c.GetAlertContacts()
+	got, err := client.AllAlertContacts()
 	if err != nil {
 		t.Error(err)
 	}
-	for i, m := range contacts {
-		if m.FriendlyName != want[i] {
-			t.Errorf("GetAlertContacts[%d] => %q, want %q", i, m.FriendlyName, want[i])
-		}
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
-}
-
-func fakeGetMonitorByIDHandler(req *http.Request) (*http.Response, error) {
-	data, err := os.Open("testdata/getMonitorByID.json")
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
 }
 
 func TestGetMonitorByID(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetMonitorByIDHandler,
+	t.Parallel()
+	client := New("dummy")
+	ts := cannedResponseServer(t, "testdata/getMonitorByID.json")
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	want := Monitor{
+		ID:           777749809,
+		FriendlyName: "Google",
+		URL:          "http://www.google.com",
+		Type:         TypeHTTP,
+		Port:         80,
 	}
-	c.http = &mockClient
-	var want int64 = 777749809
-	got, err := c.GetMonitorByID(want)
+	got, err := client.GetMonitor(want.ID)
 	if err != nil {
 		t.Error(err)
 	}
-	if got.ID != want {
-		t.Errorf("GetMonitor() => ID %d, want %d", got.ID, want)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
-}
-
-func fakeGetMonitorsHandler(req *http.Request) (*http.Response, error) {
-	data, err := os.Open("testdata/getMonitors.json")
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
 }
 
 func TestGetMonitors(t *testing.T) {
-	want := []string{
-		"Google",
-		"My Web Page",
-		"My FTP Server",
-		"PortTest",
+	t.Parallel()
+	client := New("dummy")
+	ts := cannedResponseServer(t, "testdata/getMonitors.json")
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	want := []Monitor{
+		{
+			ID:           777749809,
+			FriendlyName: "Google",
+			URL:          "http://www.google.com",
+			Type:         TypeHTTP,
+			Port:         80,
+		},
+		{
+			ID:           777712827,
+			FriendlyName: "My Web Page",
+			URL:          "http://mywebpage.com/",
+			Type:         TypeHTTP,
+		},
+		{
+			ID:           777559666,
+			FriendlyName: "My FTP Server",
+			URL:          "ftp.mywebpage.com",
+			Type:         TypePort,
+			SubType:      SubTypeFTP,
+			Port:         21,
+		},
+		{
+			ID:           781397847,
+			FriendlyName: "PortTest",
+			URL:          "mywebpage.com",
+			Type:         TypePort,
+			SubType:      SubTypeCustomPort,
+			Port:         8000,
+		},
 	}
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetMonitorsHandler,
-	}
-	c.http = &mockClient
-	monitors, err := c.GetMonitors()
+	got, err := client.AllMonitors()
 	if err != nil {
 		t.Error(err)
 	}
-	for i, m := range monitors {
-		if m.FriendlyName != want[i] {
-			t.Errorf("GetMonitors[%d] => %q, want %q", i, m.FriendlyName, want[i])
-		}
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
-}
-
-func fakeGetMonitorsBySearchHandler(req *http.Request) (*http.Response, error) {
-	var f string
-	if req.FormValue("search") != "" {
-		f = "testdata/getMonitorsBySearch.json"
-	} else {
-		f = "testdata/getMonitors.json"
-	}
-	data, err := os.Open(f)
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       data,
-	}, nil
 }
 
 func TestGetMonitorsBySearch(t *testing.T) {
-	want := "My Web Page"
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetMonitorsBySearchHandler,
+	t.Parallel()
+	client := New("dummy")
+	ts := cannedResponseServer(t, "testdata/getMonitorsBySearch.json")
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	want := []Monitor{
+		{
+			ID:           777712827,
+			FriendlyName: "My Web Page",
+			URL:          "http://mywebpage.com/",
+			Type:         TypeHTTP,
+		},
 	}
-	c.http = &mockClient
-	monitors, err := c.GetMonitorsBySearch(want)
+	got, err := client.SearchMonitors("My Web Page")
 	if err != nil {
 		t.Error(err)
 	}
-	got := monitors[0].FriendlyName
-	if got != want {
-		t.Errorf("GetMonitorBySearch(%q) => %q", want, got)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
-}
-
-func fakeNewMonitorHandler(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{
-			"stat": "ok",
-			"monitor": {
-				"id": 777810874,
-				"status": 1,
-				"type": 1
-			}
-		      }`)),
-	}, nil
-}
-
-func TestNewMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeNewMonitorHandler,
-	}
-	c.http = &mockClient
-	want := Monitor{
-		FriendlyName: "My test monitor",
-		URL:          "http://example.com",
-		Type:         MonitorType("HTTP"),
-	}
-	got, err := c.NewMonitor(want)
-	if err != nil {
-		t.Error(err)
-	}
-	if got.ID != 777810874 {
-		t.Errorf("NewMonitor() => ID %d, want 777810874", got.ID)
-	}
-}
-
-func fakePauseMonitorHandler(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: ioutil.NopCloser(bytes.NewBufferString(`{
-			"stat": "ok",
-			"monitor": {
-				"id": 677810870
-			}
-		      }`)),
-	}, nil
 }
 
 func TestPauseMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakePauseMonitorHandler,
-	}
-	c.http = &mockClient
-	mon := Monitor{
+	t.Parallel()
+	client := New("dummy")
+	ts := cannedResponseServer(t, "testdata/pauseMonitor.json")
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	want := Monitor{
 		ID: 677810870,
 	}
-	got, err := c.PauseMonitor(mon)
+	got, err := client.PauseMonitor(want)
 	if err != nil {
 		t.Error(err)
 	}
-	if got.ID != mon.ID {
-		t.Errorf("PauseMonitor() => ID %d, want %d", got.ID, mon.ID)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
-
 }
 
 func TestStartMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakePauseMonitorHandler,
-	}
-	c.http = &mockClient
-	mon := Monitor{
+	t.Parallel()
+	client := New("dummy")
+	ts := cannedResponseServer(t, "testdata/startMonitor.json")
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	want := Monitor{
 		ID: 677810870,
 	}
-	got, err := c.StartMonitor(mon)
+	got, err := client.StartMonitor(want)
 	if err != nil {
 		t.Error(err)
 	}
-	if got.ID != mon.ID {
-		t.Errorf("StartMonitor() => ID %d, want %d", got.ID, mon.ID)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
-
 }
 
-func TestEnsureMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetMonitorsBySearchHandler,
-	}
-	c.http = &mockClient
-	want := Monitor{
+func TestEnsure(t *testing.T) {
+	t.Parallel()
+	client := New("dummy")
+	ts := cannedResponseServer(t, "testdata/ensure.json")
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	mon := Monitor{
+		ID:           777712827,
 		FriendlyName: "My Web Page",
-		URL:          "http://mywebpage.com",
-		Type:         MonitorType("HTTP"),
+		URL:          "http://mywebpage.com/",
+		Type:         TypeHTTP,
 	}
-	got, err := c.EnsureMonitor(want)
+	// The client will do a SearchMonitors and get a canned response from
+	// the test server containing no matches. It will now try to create the
+	// monitor, and the test server will just respond with an empty body and
+	// OK. The resulting monitor will have an ID of 0.
+	want := int64(0)
+	got, err := client.EnsureMonitor(mon)
 	if err != nil {
 		t.Error(err)
 	}
-	if got.ID != 777712827 {
-		t.Errorf("EnsureMonitor() => ID %d, want 777712827", got.ID)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
 }
 
 func TestDeleteMonitor(t *testing.T) {
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeNewMonitorHandler,
-	}
-	c.http = &mockClient
-	want := Monitor{
-		ID: 777810874,
-	}
-	got, err := c.DeleteMonitor(want)
-	if err != nil {
+	t.Parallel()
+	client := New("dummy")
+	ts := cannedResponseServer(t, "testdata/deleteMonitor.json")
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	var want int64 = 777810874
+	if err := client.DeleteMonitor(want); err != nil {
 		t.Error(err)
 	}
-	if got.ID != want.ID {
-		t.Errorf("NewMonitor() => ID %d, want %d", got.ID, want.ID)
+}
+
+func TestRenderMonitor(t *testing.T) {
+	t.Parallel()
+	tcs := []struct {
+		name     string
+		input    Monitor
+		wantFile string
+	}{
+		{
+			name: "Simple HTTP",
+			input: Monitor{
+				ID:            777749809,
+				FriendlyName:  "Google",
+				URL:           "http://www.google.com",
+				Type:          TypeHTTP,
+				Port:          0,
+				AlertContacts: []string{"3", "5", "7"},
+			},
+			wantFile: "testdata/monitor_http.txt",
+		},
+		{
+			name: "Keyword exists",
+			input: Monitor{
+				ID:           777749810,
+				FriendlyName: "Google",
+				URL:          "http://www.google.com",
+				Type:         TypeKeyword,
+				KeywordType:  KeywordExists,
+				KeywordValue: "bogus",
+				Port:         80,
+			},
+			wantFile: "testdata/monitor_keyword.txt",
+		},
+		{
+			name: "Keyword not exists",
+			input: Monitor{
+				ID:           777749811,
+				FriendlyName: "Google",
+				URL:          "http://www.google.com",
+				Type:         TypeKeyword,
+				KeywordType:  KeywordNotExists,
+				KeywordValue: "bogus",
+				Port:         80,
+			},
+			wantFile: "testdata/monitor_keyword_notexists.txt",
+		},
+		{
+			name: "Subtype",
+			input: Monitor{
+				ID:           777749812,
+				FriendlyName: "Google",
+				URL:          "http://www.google.com",
+				Type:         TypePort,
+				SubType:      SubTypeFTP,
+				Port:         80,
+			},
+			wantFile: "testdata/monitor_subtype.txt",
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			wantBytes, err := ioutil.ReadFile(tc.wantFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := string(wantBytes)
+			got := render(monitorTemplate, tc.input)
+			if !cmp.Equal(want, got) {
+				t.Error(cmp.Diff(want, got))
+			}
+
+		})
 	}
 }
 
-func TestBuildAlertContacts(t *testing.T) {
-	contacts := []string{"2353888", "0132759"}
-	want := "2353888_0_0-0132759_0_0"
-	got := buildAlertContactList(contacts)
-	if got != want {
-		t.Errorf("buildAlertContacts() => %q, want %q", got, want)
-	}
-}
-
-func TestRender(t *testing.T) {
+func TestRenderAccount(t *testing.T) {
+	t.Parallel()
 	input := Account{
 		Email:           "j.random@example.com",
 		MonitorLimit:    300,
@@ -355,78 +449,88 @@ func TestRender(t *testing.T) {
 		DownMonitors:    2,
 		PausedMonitors:  0,
 	}
-	want := `Email: j.random@example.com
-Monitor limit: 300
-Monitor interval: 1
-Up monitors: 208
-Down monitors: 2
-Paused monitors: 0`
+	wantBytes, err := ioutil.ReadFile("testdata/account_template.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := string(wantBytes)
 	got := render(accountTemplate, input)
-	if got != want {
-		t.Errorf("render(%q) = %q, want %q", input, got, want)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
 }
 
 func TestFriendlyType(t *testing.T) {
+	t.Parallel()
 	m := Monitor{
-		Type: 1,
+		Type: TypeHTTP,
 	}
 	want := "HTTP"
 	got := m.FriendlyType()
-	if got != want {
-		t.Errorf("FriendlyType(1) = %q, want %q", got, want)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
 }
 
 func TestFriendlySubType(t *testing.T) {
-	mHTTPS := Monitor{
-		Type: 4,
-		// SubType is interface{}, so numeric JSON values will be parsed
-		// as float64. Therefore, our test data must be float64.
-		SubType: 2.0,
+	t.Parallel()
+	tcs := []struct {
+		name string
+		mon  Monitor
+		want string
+	}{
+		{
+			name: "HTTPS",
+			mon: Monitor{
+				Type:    TypePort,
+				SubType: SubTypeHTTPS,
+			},
+			want: "HTTPS (443)",
+		},
+		{
+			name: "Custom port",
+			mon: Monitor{
+				Type:    TypePort,
+				SubType: SubTypeCustomPort,
+				Port:    8080,
+			},
+			want: "Custom port (8080)",
+		},
 	}
-	wantHTTPS := "HTTPS (443)"
-	gotHTTPS := mHTTPS.FriendlySubType()
-	if gotHTTPS != wantHTTPS {
-		t.Errorf("FriendlySubType(HTTPS) = %q, want %q", gotHTTPS, wantHTTPS)
-	}
-	mCustom := Monitor{
-		Type:    4,
-		SubType: 99.0,
-		Port:    8080,
-	}
-	wantCustom := "Custom Port (8080)"
-	gotCustom := mCustom.FriendlySubType()
-	if gotCustom != wantCustom {
-		t.Errorf("FriendlySubType(Custom8080) = %q, want %q", gotCustom, wantCustom)
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := tc.mon.FriendlySubType()
+			if !cmp.Equal(tc.want, got) {
+				t.Error(cmp.Diff(tc.want, got))
+			}
+		})
 	}
 }
 
 func TestFriendlyKeywordType(t *testing.T) {
+	t.Parallel()
 	m := Monitor{
-		Type: 2,
-		// KeywordType is interface{}, so numeric JSON values will be parsed
-		// as float64. Therefore, our test data must be float64.
-		KeywordType: 1.0,
+		Type:        TypeKeyword,
+		KeywordType: KeywordExists,
 	}
-	want := "exists"
+	want := "Exists"
 	got := m.FriendlyKeywordType()
-	if got != want {
-		t.Errorf("FriendlyKeywordType() = %q, want %q", got, want)
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
 	}
 }
 
-func TestStringMethods(t *testing.T) {
-	m := Monitor{Type: 1}
-	if m.String() == "" {
-		t.Error("m.String() = empty, want non-empty string")
-	}
-	a := Account{}
-	if a.String() == "" {
-		t.Error("a.String() = empty, want non-empty string")
-	}
-	c := AlertContact{}
-	if c.String() == "" {
-		t.Error("c.String() = empty, want non-empty string")
-	}
+// cannedResponseServer returns a test TLS server which responds to any request
+// with a specified file of canned JSON data.
+func cannedResponseServer(t *testing.T, path string) *httptest.Server {
+	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		data, err := os.Open(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer data.Close()
+		io.Copy(w, data)
+	}))
 }

@@ -1,0 +1,6 @@
+Email: j.random@example.com
+Monitor limit: 300
+Monitor interval: 1
+Up monitors: 208
+Down monitors: 2
+Paused monitors: 0

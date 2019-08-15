@@ -2,7 +2,7 @@
 
 # uptimerobot
 
-`uptimerobot` is a Go library and command-line client for the [UptimeRobot](https://uptimerobot.com/) website monitoring service. It allows you to search for existing monitors, delete monitors, create new monitors, and also inspect your account details and alert contacts.
+`uptimerobot` is a Go library and command-line client for the [Uptime Robot](https://uptimerobot.com/) website monitoring service. It allows you to search for existing monitors, delete monitors, create new monitors, and also inspect your account details and alert contacts.
 
 ## Installing the command-line client
 
@@ -30,7 +30,7 @@ uptimerobot -h
 
 ## Setting your API key
 
-To use the client with your UptimeRobot account, you will need the Main API Key for the account. Go to the [UptimeRobot Settings page](https://uptimerobot.com/dashboard.php#mySettings) and click 'Show/hide it' under the 'Main API Key' section.
+To use the client with your Uptime Robot account, you will need the Main API Key for the account. Go to the [Uptime Robot Settings page](https://uptimerobot.com/dashboard.php#mySettings) and click 'Show/hide it' under the 'Main API Key' section.
 
 There are three ways to pass your API key to the client: in a config file, in an environment variable, or on the command line.
 
@@ -124,9 +124,6 @@ ID: 780689017
 Name: Example.com website
 URL: https://www.example.com/
 Type: HTTP
-Subtype:
-Keyword type: 0
-Keyword value:
 ```
 
 (Use `uptimerobot monitors` to list all existing monitors.)
@@ -182,10 +179,10 @@ To do this, run `uptimerobot ensure URL NAME`:
 
 ```
 uptimerobot ensure https://www.example.com/ "Example.com website"
-Monitor ID 780689018
+Monitor ID 780689018 ensured
 ```
 
-If a monitor already existed for the same URL, its ID will be returned. Otherwise, a new monitor will be created, and its ID returned.
+If the monitor doesn't already exist, it will be created.
 
 You can use the `-c` flag to add alert contacts, just as for the `uptimerobot new` command.
 
@@ -199,7 +196,7 @@ When things aren't going quite as they should, you can add the `--debug` flag to
 
 ## Using the Go library
 
-If the command-line client doesn't do quite what you need, or if you want to use UptimeRobot API access in your own programs, import the library using:
+If the command-line client doesn't do quite what you need, or if you want to use Uptime Robot API access in your own programs, import the library using:
 
 ```go
 import "github.com/bitfield/uptimerobot/pkg"
@@ -211,10 +208,10 @@ Create a new `Client` object by calling `uptimerobot.New()` with an API key:
 client = uptimerobot.New(apiKey)
 ```
 
-Once you have a client, you can use it to call various UptimeRobot API features:
+Once you have a client, you can use it to call various Uptime Robot API features:
 
 ```go
-monitors, err := client.GetMonitors()
+monitors, err := client.AllMonitors()
 if err != nil {
         log.Fatal(err)
 }
@@ -228,40 +225,33 @@ Most API operations use the `Monitor` struct, which looks like this:
 
 ```go
 type Monitor struct {
-        ID           int64  `json:"id"`
+	ID           int64  `json:"id,omitempty"`
         FriendlyName string `json:"friendly_name"`
         URL          string `json:"url"`
         ...
 }
 ```
 
-For example, to delete a monitor, first create a new `Monitor` variable and set its `ID` field to the ID of the monitor you want to delete. Then pass it to `DeleteMonitor()`:
+For example, to delete a monitor, find the ID of the monitor you want to delete, and pass it to `DeleteMonitor()`:
 
 ```go
-m := uptimerobot.Monitor{
-        ID: 780689017,
-}
-new, err := client.DeleteMonitor(m)
-if err != nil {
+if err := client.DeleteMonitor(780689017); err != nil {
         log.Fatal(err)
 }
-fmt.Println(new.ID)
 ```
 
-To call an UptimeRobot API verb not implemented by the `uptimerobot` library, you can use the `MakeAPICall()` method directly:
+To call an Uptime Robot API verb not implemented by the `uptimerobot` library, you can use the `MakeAPICall()` method directly, passing it some suitable JSON data:
 
 ```go
 r := uptimerobot.Response{}
-p := uptimerobot.Params{
-        "id": 780689017,
-}
-if err := client.MakeAPICall("deleteMonitor", &r, p); err != nil {
+data := []byte(fmt.Sprintf("{\"id\": \"%d\"}", m.ID))
+if err := client.MakeAPICall("deleteMonitor", &r, data); err != nil {
     log.Fatal(err)
 }
 fmt.Println(r.Monitor.ID)
 ```
 
-The API response is returned in the `Response` struct. If the call fails, `MakeAPICall()` will return the  error message. Otherwise, the requested data will be available in the appropriate field of the `Response` struct:
+The API response is returned in the `Response` struct. If the call fails, `MakeAPICall()` will return the error message. Otherwise, the requested data will be available in the appropriate field of the `Response` struct:
 
 ```go
 type Response struct {
@@ -274,39 +264,48 @@ type Response struct {
 }
 ```
 
-For example, when deleting a monitor, as in the above example, the ID of the deleted monitor will be returned as `r.Monitor.ID`.
+For example, when creating a new monitor, the ID of the created monitor will be returned as `r.Monitor.ID`.
 
-If things aren't working as you expect, you can assign an `io.Writer` to `client.Debug` to receive debug output. If `client.Debug` is non-nil, `MakeAPICall()` will dump the HTTP request and response to it:
+If things aren't working as you expect, you can use the debug facility to dump the raw request and response data from every API call. To do this, set the environment variable `UPTIMEROBOT_DEBUG`, which will dump debug information to the standard output, or set `client.Debug` to any `io.Writer` to send output to that writer.
 
-```go
-client.Debug = os.Stdout
-r := uptimerobot.Response{}
-p := uptimerobot.Params{
-    "frogurt": "cursed",
-}
-if err := client.MakeAPICall("monkeyPaw", &r, p); err != nil {
-    log.Fatal(err)
-}
-```
-
-outputs:
+Here's an example of the debug output shown when creating a new monitor:
 
 ```
-POST /v2/monkeyPaw HTTP/1.1
+POST /v2/newMonitor HTTP/1.1
 Host: api.uptimerobot.com
 User-Agent: Go-http-client/1.1
-Content-Length: 52
-Content-Type: application/x-www-form-urlencoded
+Content-Length: 221
+Content-Type: application/json
 Accept-Encoding: gzip
 
-api_key=XXX&format=json&frogurt=cursed
-...
+{
+  "alert_contacts": "0335551_0_0-2416450_0_0",
+  "api_key": "XXX",
+  "format": "json",
+  "friendly_name": "Example check",
+  "port": 443,
+  "type": 1,
+  "url": "https://www.example.com"
+}
+
+HTTP/2.0 200 OK
+Access-Control-Allow-Origin: *
+Cf-Ray: 505422654b04dbf3-LHR
+Content-Type: application/json; charset=utf-8
+Date: Mon, 12 Aug 2019 17:22:57 GMT
+Etag: W/"33-NlNt8dOhQvno31TtQYsI0xTJ9w"
+Expect-Ct: max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+Server: cloudflare
+Set-Cookie: __cfduid=d9ec99b8a777d9f806956432718fb5c81565630577; expires=Tue, 11-Aug-20 17:22:57 GMT; path=/; domain=.uptimerobot.com; HttpOnly
+Vary: Accept-Encoding
+
+{"stat":"ok","monitor":{"id":783263671,"status":1}}
 ```
 
 ## Bugs and feature requests
 
 If you find a bug in the `uptimerobot` client or library, please [open an issue](https://github.com/bitfield/uptimerobot/issues). Similarly, if you'd like a feature added or improved, let me know via an issue.
 
-Not all the functionality of the UptimeRobot API is implemented yet.
+Not all the functionality of the Uptime Robot API is implemented yet.
 
 Pull requests welcome!
