@@ -238,6 +238,7 @@ func fakeGetMonitorsPagingHandler(req *http.Request) (*http.Response, error) {
 }
 
 func TestGetMonitorsPages(t *testing.T) {
+	t.Parallel()
 	const (
 		baseName    = "monitor"
 		numMonitors = 100
@@ -246,12 +247,30 @@ func TestGetMonitorsPages(t *testing.T) {
 	for i := 0; i < numMonitors; i++ {
 		want[i] = fmt.Sprintf("%s-%d", baseName, i+1)
 	}
-	c := New("dummy")
-	mockClient := MockHTTPClient{
-		DoFunc: fakeGetMonitorsPagingHandler,
-	}
-	c.http = &mockClient
-	monitors, err := c.GetMonitors()
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bodyMap := map[string]interface{}{}
+		if err := json.NewDecoder(r.Body).Decode(&bodyMap); err != nil {
+			t.Fatal(err)
+		}
+		var data *os.File
+		var err error
+		if bodyMap["offset"] == "0" || bodyMap["offset"] == "" {
+			data, err = os.Open("testdata/getMonitorsPage1.json")
+		} else {
+			data, err = os.Open("testdata/getMonitorsPage2.json")
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		w.WriteHeader(http.StatusOK)
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	monitors, err := client.AllMonitors()
 	if err != nil {
 		t.Error(err)
 	}

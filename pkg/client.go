@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -111,11 +110,9 @@ func (c *Client) AllMonitors() (monitors []Monitor, err error) {
 
 	for loopCondition {
 		r := Response{}
-		params := Params{
-			"offset": strconv.Itoa(offset),
-			"limit":  strconv.Itoa(limit),
-		}
-		if err := c.MakeAPICall("getMonitors", &r, params); err != nil {
+		data := []byte(fmt.Sprintf("{\"offset\": \"%d\", \"limit\": \"%d\"}", offset, limit))
+
+		if err := c.MakeAPICall("getMonitors", &r, data); err != nil {
 			return nil, err
 		}
 
@@ -125,8 +122,6 @@ func (c *Client) AllMonitors() (monitors []Monitor, err error) {
 			err = fmt.Errorf(fmt.Sprintf("%v", r.Error))
 			return nil, err
 		}
-
-		monitors = append(monitors, r.Monitors...)
 
 		offset = r.Pagination.Offset + limit
 		total := r.Pagination.Total
