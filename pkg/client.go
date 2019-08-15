@@ -96,40 +96,23 @@ func (c *Client) GetMonitor(ID int64) (Monitor, error) {
 	return r.Monitors[0], nil
 }
 
-// PageLimit is the default limit for monitors returned per page.
-const PageLimit = 50
-
 // AllMonitors returns a slice of Monitors representing the monitors currently
 // configured in your Uptime Robot account.
-func (c *Client) AllMonitors() (monitors []Monitor, err error) {
-	var (
-		offset        = 0
-		limit         = PageLimit
-		loopCondition = true
-	)
-
-	for loopCondition {
-		r := Response{}
-		data := []byte(fmt.Sprintf("{\"offset\": \"%d\", \"limit\": \"%d\"}", offset, limit))
-
+func (c *Client) AllMonitors() ([]Monitor, error) {
+	monitors := []Monitor{}
+	// This limit is imposed by the API.
+	const maxRecordsPerRequest = 50
+	offset := 0
+	r := Response{}
+	for offset <= r.Pagination.Total {
+		data := []byte(fmt.Sprintf("{\"offset\": \"%d\", \"limit\": \"%d\"}", offset, maxRecordsPerRequest))
 		if err := c.MakeAPICall("getMonitors", &r, data); err != nil {
 			return nil, err
 		}
-
 		monitors = append(monitors, r.Monitors...)
-
-		if r.Error != nil {
-			err = fmt.Errorf(fmt.Sprintf("%v", r.Error))
-			return nil, err
-		}
-
-		offset = r.Pagination.Offset + limit
-		total := r.Pagination.Total
-
-		loopCondition = offset < total
+		offset = r.Pagination.Offset + maxRecordsPerRequest
 	}
-
-	return monitors, err
+	return monitors, nil
 }
 
 // SearchMonitors returns a slice of Monitors whose FriendlyName or URL

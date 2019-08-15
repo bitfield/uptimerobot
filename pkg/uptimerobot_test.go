@@ -224,9 +224,14 @@ func TestGetMonitorsPages(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&bodyMap); err != nil {
 			t.Fatal(err)
 		}
-		datafile := "testdata/getMonitorsPage1.json"
-		if bodyMap["offset"] != "0" {
+		var datafile string
+		switch bodyMap["offset"] {
+		case "0":
+			datafile = "testdata/getMonitorsPage1.json"
+		case "50":
 			datafile = "testdata/getMonitorsPage2.json"
+		default:
+			t.Fatalf("unexpected offset %s", bodyMap["offset"])
 		}
 		data, err := os.Open(datafile)
 		if err != nil {
@@ -244,7 +249,7 @@ func TestGetMonitorsPages(t *testing.T) {
 		t.Error(err)
 	}
 	if len(monitors) != 100 {
-		t.Errorf("Wanted 100 monitors, but got %d", len(monitors))
+		t.Fatalf("Wanted 100 monitors, but got %d", len(monitors))
 	}
 	for i, m := range monitors {
 		want := fmt.Sprintf("monitor-%d", i+1)
