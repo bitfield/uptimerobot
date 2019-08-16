@@ -2,6 +2,7 @@ package uptimerobot
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -212,6 +213,50 @@ func TestGetMonitorByID(t *testing.T) {
 	}
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
+	}
+}
+
+func TestGetMonitorsPages(t *testing.T) {
+	t.Parallel()
+	client := New("dummy")
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bodyMap := map[string]interface{}{}
+		if err := json.NewDecoder(r.Body).Decode(&bodyMap); err != nil {
+			t.Fatal(err)
+		}
+		var datafile string
+		switch bodyMap["offset"] {
+		case "0":
+			datafile = "testdata/getMonitorsPage1.json"
+		case "50":
+			datafile = "testdata/getMonitorsPage2.json"
+		default:
+			t.Fatalf("unexpected offset %s", bodyMap["offset"])
+		}
+		data, err := os.Open(datafile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		w.WriteHeader(http.StatusOK)
+		defer data.Close()
+		io.Copy(w, data)
+	}))
+	defer ts.Close()
+	client.HTTPClient = ts.Client()
+	client.URL = ts.URL
+	monitors, err := client.AllMonitors()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(monitors) != 100 {
+		t.Fatalf("Wanted 100 monitors, but got %d", len(monitors))
+	}
+	for i, m := range monitors {
+		want := fmt.Sprintf("monitor-%d", i+1)
+		got := m.FriendlyName
+		if !cmp.Equal(want, got) {
+			t.Error(cmp.Diff(want, got))
+		}
 	}
 }
 
