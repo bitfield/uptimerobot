@@ -123,6 +123,7 @@ uptimerobot search www.example.com
 ID: 780689017
 Name: Example.com website
 URL: https://www.example.com/
+Status: Up
 Type: HTTP
 ```
 
