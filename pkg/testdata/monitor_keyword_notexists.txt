@@ -1,6 +1,7 @@
 ID: 777749811
 Name: Google
 URL: http://www.google.com
+Status: Paused
 Port: 80
 Type: Keyword
 KeywordType: NotExists

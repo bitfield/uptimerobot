@@ -1,5 +1,6 @@
 ID: 777749809
 Name: Google
 URL: http://www.google.com
+Status: Up
 Port: 80
 Type: HTTP

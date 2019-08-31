@@ -49,39 +49,16 @@ const StatusPaused = 0
 // status when calling EditMonitor.
 const StatusResumed = 1
 
-// Status corresponds to the reported status of a monitor from the uptimerobot API
-type Status int
+// StatusUnknown is the status value indicating that the monitor status is
+// currently unknown.
+const StatusUnknown = 1
 
-// Status codes for each possible monitor status returned by uptimerobot
-const (
-	Up        Status = 2
-	Down      Status = 9
-	MaybeDown Status = 8
-	Unknown   Status = 1
-	Paused    Status = 0
-)
+// StatusUp is the status value indicating that the monitor is currently up.
+const StatusUp = 2
 
-var statuses = map[Status]string{
-	Up:        "Up",
-	Down:      "Down",
-	MaybeDown: "Maybe Down",
-	Unknown:   "Not Checked",
-	Paused:    "Paused",
-}
+// StatusMaybeDown is the status value indicating that the monitor may be down,
+// but this has not yet been confirmed.
+const StatusMaybeDown = 8
 
-func (s Status) String() string {
-	statuses := map[Status]string{
-		Up:        "Up",
-		Down:      "Down",
-		MaybeDown: "Maybe Down",
-		Unknown:   "Not Checked",
-		Paused:    "Paused",
-	}
-
-	statusString, ok := statuses[s]
-	if !ok {
-		return "Unknown Status"
-	}
-	return statusString
-
-}
+// StatusDown is the status value indicating that the monitor is currently down.
+const StatusDown = 9
