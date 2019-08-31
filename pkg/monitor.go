@@ -18,11 +18,13 @@ type Monitor struct {
 	Port          int      `json:"port"`
 	KeywordValue  string   `json:"keyword_value,omitempty"`
 	AlertContacts []string `json:"alert_contacts,omitempty"`
+	Status        int      `json:"status,omitempty"`
 }
 
 const monitorTemplate = `ID: {{ .ID }}
 Name: {{ .FriendlyName }}
-URL: {{ .URL -}}
+URL: {{ .URL }}
+Status: {{ .FriendlyStatus -}}
 {{ if .Port }}{{ printf "\nPort: %d" .Port }}{{ end -}}
 {{ if .Type }}{{ printf "\nType: %s" .FriendlyType }}{{ end -}}
 {{ if .SubType }}{{ printf "\nSubtype: %s" .FriendlySubType }}{{ end -}}
@@ -46,7 +48,7 @@ func (m Monitor) FriendlyType() string {
 	case TypePort:
 		return "Port"
 	default:
-		return fmt.Sprintf("%v", m.Type)
+		return fmt.Sprintf("%d", m.Type)
 	}
 }
 
@@ -69,7 +71,7 @@ func (m Monitor) FriendlySubType() string {
 	case SubTypeCustomPort:
 		return fmt.Sprintf("Custom port (%d)", m.Port)
 	default:
-		return fmt.Sprintf("%v", m.SubType)
+		return fmt.Sprintf("%d", m.SubType)
 	}
 }
 
@@ -81,7 +83,24 @@ func (m Monitor) FriendlyKeywordType() string {
 	case KeywordNotExists:
 		return "NotExists"
 	default:
-		return fmt.Sprintf("%v", m.KeywordType)
+		return fmt.Sprintf("%d", m.KeywordType)
+	}
+}
+
+func (m Monitor) FriendlyStatus() string {
+	switch m.Status {
+	case StatusPaused:
+		return "Paused"
+	case StatusUnknown:
+		return "Unknown"
+	case StatusUp:
+		return "Up"
+	case StatusMaybeDown:
+		return "MaybeDown"
+	case StatusDown:
+		return "Down"
+	default:
+		return fmt.Sprintf("%d", m.Status)
 	}
 }
 

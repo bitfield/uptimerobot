@@ -49,3 +49,16 @@ const StatusPaused = 0
 // status when calling EditMonitor.
 const StatusResumed = 1
 
+// StatusUnknown is the status value indicating that the monitor status is
+// currently unknown.
+const StatusUnknown = 1
+
+// StatusUp is the status value indicating that the monitor is currently up.
+const StatusUp = 2
+
+// StatusMaybeDown is the status value indicating that the monitor may be down,
+// but this has not yet been confirmed.
+const StatusMaybeDown = 8
+
+// StatusDown is the status value indicating that the monitor is currently down.
+const StatusDown = 9

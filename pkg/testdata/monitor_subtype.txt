@@ -1,6 +1,7 @@
 ID: 777749812
 Name: Google
 URL: http://www.google.com
+Status: Paused
 Port: 80
 Type: Port
 Subtype: FTP (21)

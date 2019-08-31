@@ -1,6 +1,7 @@
 ID: 777749810
 Name: Google
 URL: http://www.google.com
+Status: MaybeDown
 Port: 80
 Type: Keyword
 KeywordType: Exists

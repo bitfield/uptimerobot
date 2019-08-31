@@ -56,6 +56,7 @@ func TestUnmarshalMonitor(t *testing.T) {
 		URL:          "http://www.google.com",
 		Type:         TypeHTTP,
 		Port:         80,
+		Status:       StatusUnknown,
 	}
 	data, err := ioutil.ReadFile("testdata/unmarshal.json")
 	if err != nil {
@@ -206,6 +207,7 @@ func TestGetMonitorByID(t *testing.T) {
 		URL:          "http://www.google.com",
 		Type:         TypeHTTP,
 		Port:         80,
+		Status:       StatusUnknown,
 	}
 	got, err := client.GetMonitor(want.ID)
 	if err != nil {
@@ -274,12 +276,14 @@ func TestGetMonitors(t *testing.T) {
 			URL:          "http://www.google.com",
 			Type:         TypeHTTP,
 			Port:         80,
+			Status:       StatusUnknown,
 		},
 		{
 			ID:           777712827,
 			FriendlyName: "My Web Page",
 			URL:          "http://mywebpage.com/",
 			Type:         TypeHTTP,
+			Status:       StatusUp,
 		},
 		{
 			ID:           777559666,
@@ -288,6 +292,7 @@ func TestGetMonitors(t *testing.T) {
 			Type:         TypePort,
 			SubType:      SubTypeFTP,
 			Port:         21,
+			Status:       StatusUp,
 		},
 		{
 			ID:           781397847,
@@ -296,6 +301,7 @@ func TestGetMonitors(t *testing.T) {
 			Type:         TypePort,
 			SubType:      SubTypeCustomPort,
 			Port:         8000,
+			Status:       StatusUnknown,
 		},
 	}
 	got, err := client.AllMonitors()
@@ -320,6 +326,7 @@ func TestGetMonitorsBySearch(t *testing.T) {
 			FriendlyName: "My Web Page",
 			URL:          "http://mywebpage.com/",
 			Type:         TypeHTTP,
+			Status:       StatusUp,
 		},
 	}
 	got, err := client.SearchMonitors("My Web Page")
@@ -425,6 +432,7 @@ func TestRenderMonitor(t *testing.T) {
 				Type:          TypeHTTP,
 				Port:          0,
 				AlertContacts: []string{"3", "5", "7"},
+				Status:        StatusUp,
 			},
 			wantFile: "testdata/monitor_http.txt",
 		},
@@ -438,6 +446,7 @@ func TestRenderMonitor(t *testing.T) {
 				KeywordType:  KeywordExists,
 				KeywordValue: "bogus",
 				Port:         80,
+				Status:       StatusMaybeDown,
 			},
 			wantFile: "testdata/monitor_keyword.txt",
 		},
@@ -451,6 +460,7 @@ func TestRenderMonitor(t *testing.T) {
 				KeywordType:  KeywordNotExists,
 				KeywordValue: "bogus",
 				Port:         80,
+				Status:       StatusUnknown,
 			},
 			wantFile: "testdata/monitor_keyword_notexists.txt",
 		},
@@ -463,6 +473,7 @@ func TestRenderMonitor(t *testing.T) {
 				Type:         TypePort,
 				SubType:      SubTypeFTP,
 				Port:         80,
+				Status:       StatusPaused,
 			},
 			wantFile: "testdata/monitor_subtype.txt",
 		},
