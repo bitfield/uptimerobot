@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-uptimerobot
+uptimerobot*
 
 # Test binary, build with `go test -c`
 *.test
