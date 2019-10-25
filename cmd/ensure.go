@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	uptimerobot "github.com/bitfield/uptimerobot/pkg"
 	"github.com/spf13/cobra"
@@ -19,6 +20,10 @@ var ensureCmd = &cobra.Command{
 			FriendlyName:  args[1],
 			Type:          uptimerobot.TypeHTTP,
 			AlertContacts: contacts,
+			Port:          80,
+		}
+		if strings.HasPrefix(m.URL, "https") {
+			m.Port = 443
 		}
 		ID, err := client.EnsureMonitor(m)
 		if err != nil {
