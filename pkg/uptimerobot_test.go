@@ -75,66 +75,120 @@ func TestUnmarshalMonitor(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	t.Parallel()
-	client := New("dummy")
-	// force test coverage of the client's dump functionality
-	client.Debug = ioutil.Discard
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			t.Errorf("want POST request, got %q", r.Method)
-		}
-		wantURL := "/v2/newMonitor"
-		if r.URL.EscapedPath() != wantURL {
-			t.Errorf("want %q, got %q", wantURL, r.URL.EscapedPath())
-		}
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r.Body.Close()
-		want, err := ioutil.ReadFile("testdata/requestNewMonitor.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Convert the received body and the expected body to maps, for
-		// ease of comparison
-		wantMap := map[string]interface{}{}
-		err = json.Unmarshal(want, &wantMap)
-		if err != nil {
-			t.Fatal(err)
-		}
-		bodyMap := map[string]interface{}{}
-		err = json.Unmarshal(body, &bodyMap)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !cmp.Equal(wantMap, bodyMap) {
-			t.Error(cmp.Diff(wantMap, bodyMap))
-		}
-		w.WriteHeader(http.StatusOK)
-		data, err := os.Open("testdata/newMonitor.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer data.Close()
-		io.Copy(w, data)
-	}))
-	defer ts.Close()
-	client.HTTPClient = ts.Client()
-	client.URL = ts.URL
-	create := Monitor{
-		FriendlyName:  "My test monitor",
-		URL:           "http://example.com",
-		Type:          TypeHTTP,
-		Port:          80,
-		AlertContacts: []string{"3", "5", "7"},
+
+	tcs := []struct {
+		name         string
+		input        Monitor
+		requestFile  string
+		responseFile string
+	}{
+		{
+			name: "Simple HTTP",
+			input: Monitor{
+				FriendlyName:  "My test monitor",
+				URL:           "http://example.com",
+				Type:          TypeHTTP,
+				AlertContacts: []string{"3", "5", "7"},
+			},
+			requestFile:  "testdata/requestNewHttpMonitor.json",
+			responseFile: "testdata/newMonitor.json",
+		},
+		{
+			name: "Simple HTTPS",
+			input: Monitor{
+				FriendlyName:  "My HTTPS test monitor",
+				URL:           "https://example.com",
+				Type:          TypeHTTP,
+				AlertContacts: []string{"3", "5", "7"},
+			},
+			requestFile:  "testdata/requestNewHttpsMonitor.json",
+			responseFile: "testdata/newMonitor.json",
+		},
+		{
+			name: "IMAP port",
+			input: Monitor{
+				FriendlyName:  "My IMAP port monitor",
+				URL:           "example.com",
+				Type:          TypePort,
+				SubType:       SubTypeIMAP,
+				AlertContacts: []string{"3", "5", "7"},
+			},
+			requestFile:  "testdata/requestNewImapPortMonitor.json",
+			responseFile: "testdata/newMonitor.json",
+		},
+		{
+			name: "Custom port",
+			input: Monitor{
+				FriendlyName:  "My custom port monitor",
+				URL:           "example.com",
+				Type:          TypePort,
+				SubType:       SubTypeCustomPort,
+				Port:          8443,
+				AlertContacts: []string{"3", "5", "7"},
+			},
+			requestFile:  "testdata/requestNewCustomPortMonitor.json",
+			responseFile: "testdata/newMonitor.json",
+		},
 	}
-	got, err := client.CreateMonitor(create)
-	if err != nil {
-		t.Error(err)
-	}
-	var want int64 = 777810874
-	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			client := New("dummy")
+			// force test coverage of the client's dump functionality
+			client.Debug = ioutil.Discard
+			ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodPost {
+					t.Errorf("want POST request, got %q", r.Method)
+				}
+				wantURL := "/v2/newMonitor"
+				if r.URL.EscapedPath() != wantURL {
+					t.Errorf("want %q, got %q", wantURL, r.URL.EscapedPath())
+				}
+				body, err := ioutil.ReadAll(r.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				r.Body.Close()
+				want, err := ioutil.ReadFile(tc.requestFile)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Convert the received body and the expected body to maps, for
+				// ease of comparison
+				wantMap := map[string]interface{}{}
+				err = json.Unmarshal(want, &wantMap)
+				if err != nil {
+					t.Fatal(err)
+				}
+				bodyMap := map[string]interface{}{}
+				err = json.Unmarshal(body, &bodyMap)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !cmp.Equal(wantMap, bodyMap) {
+					t.Error(cmp.Diff(wantMap, bodyMap))
+				}
+				w.WriteHeader(http.StatusOK)
+				data, err := os.Open(tc.responseFile)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer data.Close()
+				io.Copy(w, data)
+			}))
+			defer ts.Close()
+			client.HTTPClient = ts.Client()
+			client.URL = ts.URL
+			got, err := client.CreateMonitor(tc.input)
+			if err != nil {
+				t.Error(err)
+			}
+			var want int64 = 777810874
+			if !cmp.Equal(want, got) {
+				t.Error(cmp.Diff(want, got))
+			}
+		})
 	}
 }
 

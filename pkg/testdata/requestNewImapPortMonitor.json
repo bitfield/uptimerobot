@@ -1,0 +1,9 @@
+{
+  "api_key": "dummy",
+  "format": "json",
+  "friendly_name": "My IMAP port monitor",
+  "url": "example.com",
+  "type": 4,
+  "sub_type": 6,
+  "alert_contacts": "3_0_0-5_0_0-7_0_0"
+}
