@@ -271,7 +271,7 @@ If things aren't working as you expect, you can use the debug facility to dump t
 
 Here's an example of the debug output shown when creating a new monitor:
 
-```
+```http
 POST /v2/newMonitor HTTP/1.1
 Host: api.uptimerobot.com
 User-Agent: Go-http-client/1.1
