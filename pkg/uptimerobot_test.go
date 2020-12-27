@@ -590,3 +590,15 @@ func cannedResponseServer(t *testing.T, path string) *httptest.Server {
 		io.Copy(w, data)
 	}))
 }
+
+func TestAlertContactFriendlyType(t *testing.T) {
+	t.Parallel()
+	a := AlertContact{
+		Type: AlertContactTypeSlack,
+	}
+	want := "Slack"
+	got := a.FriendlyType()
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+}
