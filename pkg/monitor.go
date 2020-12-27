@@ -8,6 +8,7 @@ import (
 )
 
 // Monitor represents an Uptime Robot monitor.
+// AlertContacts in Monitor struct is not equal AlertContact type. Here we just have array of AlertContact IDs in a string representation
 type Monitor struct {
 	ID            int64    `json:"id,omitempty"`
 	FriendlyName  string   `json:"friendly_name"`
@@ -169,6 +170,19 @@ func (m *Monitor) UnmarshalJSON(data []byte) error {
 			raw[f] = v
 		}
 	}
+	// We don't need full AlertContact structure, we need only its ID
+	for key, _ := range raw {
+		if key == "alert_contacts" {
+			var alertContactsId []string
+			alertContacts := raw[key].([]interface{})
+			for _, ac := range alertContacts {
+				alertContact := ac.(map[string]interface{})
+				alertContactsId = append(alertContactsId, alertContact["id"].(string))
+			}
+			raw[key] = alertContactsId
+		}
+	}
+
 	// Marshal the cleaned-up data back to JSON
 	data, err = json.Marshal(raw)
 	if err != nil {

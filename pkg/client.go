@@ -86,7 +86,7 @@ func (c *Client) GetAccountDetails() (Account, error) {
 // and returns the corresponding Monitor, or an error if the operation failed.
 func (c *Client) GetMonitor(ID int64) (Monitor, error) {
 	r := Response{}
-	data := []byte(fmt.Sprintf("{\"monitors\": \"%d\"}", ID))
+	data := []byte(fmt.Sprintf("{\"monitors\": \"%d\", \"alert_contacts\": \"1\"}", ID))
 	if err := c.MakeAPICall("getMonitors", &r, data); err != nil {
 		return Monitor{}, err
 	}
@@ -105,7 +105,8 @@ func (c *Client) AllMonitors() ([]Monitor, error) {
 	offset := 0
 	r := Response{}
 	for offset <= r.Pagination.Total {
-		data := []byte(fmt.Sprintf("{\"offset\": \"%d\", \"limit\": \"%d\"}", offset, maxRecordsPerRequest))
+		data := []byte(fmt.Sprintf("{\"offset\": \"%d\", \"limit\": \"%d\", \"alert_contacts\": \"1\"}", offset, maxRecordsPerRequest))
+		//data := []byte(fmt.Sprintf("{\"offset\": \"%d\", \"limit\": \"%d\"}", offset, maxRecordsPerRequest))
 		if err := c.MakeAPICall("getMonitors", &r, data); err != nil {
 			return nil, err
 		}
