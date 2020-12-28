@@ -106,7 +106,6 @@ func (c *Client) AllMonitors() ([]Monitor, error) {
 	r := Response{}
 	for offset <= r.Pagination.Total {
 		data := []byte(fmt.Sprintf("{\"offset\": \"%d\", \"limit\": \"%d\", \"alert_contacts\": \"1\"}", offset, maxRecordsPerRequest))
-		//data := []byte(fmt.Sprintf("{\"offset\": \"%d\", \"limit\": \"%d\"}", offset, maxRecordsPerRequest))
 		if err := c.MakeAPICall("getMonitors", &r, data); err != nil {
 			return nil, err
 		}

@@ -66,20 +66,20 @@ const StatusDown = 9
 // AlertContactType is a predefined values from uptimerobot. Need for using AlertContact friendly type.
 const (
 	AlertContactTypePrimaryEmail = 0
-	AlertContactTypeEmail        = 2
-	AlertContactTypeSms          = 8
-	AlertContactTypeVoiceCall    = 14
-	AlertContactTypeWebHook      = 5
 	AlertContactTypeEmailToSms   = 1
+	AlertContactTypeEmail        = 2
 	AlertContactTypeTwitter      = 3
-	AlertContactTypeTelegram     = 18
+	AlertContactTypeWebHook      = 5
+	AlertContactTypePushbullet   = 6
+	AlertContactTypeZaiper       = 7
+	AlertContactTypeSms          = 8
+	AlertContactTypePushover     = 9
+	AlertContactTypeHipChat      = 10
 	AlertContactTypeSlack        = 11
+	AlertContactTypeVoiceCall    = 14
+	AlertContactTypeVictorOps    = 15
+	AlertContactTypePagerDuty    = 16
+	AlertContactTypeTelegram     = 18
 	AlertContactTypeTeams        = 20
 	AlertContactTypeGoogleChat   = 21
-	AlertContactTypeHipChat      = 10
-	AlertContactTypePagerDuty    = 16
-	AlertContactTypePushbullet   = 6
-	AlertContactTypePushover     = 9
-	AlertContactTypeVictorOps    = 15
-	AlertContactTypeZaiper       = 7
 )
