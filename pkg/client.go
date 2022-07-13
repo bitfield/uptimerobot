@@ -242,12 +242,11 @@ func (c *Client) MakeAPICall(verb string, r *Response, data []byte) error {
 		return fmt.Errorf("reading response body: %v", err)
 	}
 	resp.Body.Close()
-	respString := string(respBytes)
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected response status %d: %q", resp.StatusCode, respString)
+		return fmt.Errorf("unexpected response status %d: %q", resp.StatusCode, respBytes)
 	}
 	if err = json.Unmarshal(respBytes, &r); err != nil {
-		return fmt.Errorf("decoding error for %q: %v", respString, err)
+		return fmt.Errorf("decoding error for %q: %v", respBytes, err)
 	}
 	if r.Stat != "ok" {
 		e, _ := json.MarshalIndent(r.Error, "", " ")
