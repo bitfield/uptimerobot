@@ -62,3 +62,24 @@ const StatusMaybeDown = 8
 
 // StatusDown is the status value indicating that the monitor is currently down.
 const StatusDown = 9
+
+// AlertContactType is a predefined values from uptimerobot. Need for using AlertContact friendly type.
+const (
+	AlertContactTypePrimaryEmail = 0
+	AlertContactTypeEmailToSms   = 1
+	AlertContactTypeEmail        = 2
+	AlertContactTypeTwitter      = 3
+	AlertContactTypeWebHook      = 5
+	AlertContactTypePushbullet   = 6
+	AlertContactTypeZaiper       = 7
+	AlertContactTypeSms          = 8
+	AlertContactTypePushover     = 9
+	AlertContactTypeHipChat      = 10
+	AlertContactTypeSlack        = 11
+	AlertContactTypeVoiceCall    = 14
+	AlertContactTypeVictorOps    = 15
+	AlertContactTypePagerDuty    = 16
+	AlertContactTypeTelegram     = 18
+	AlertContactTypeTeams        = 20
+	AlertContactTypeGoogleChat   = 21
+)
