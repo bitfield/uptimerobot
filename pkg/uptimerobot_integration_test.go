@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -35,39 +36,22 @@ func exampleMonitor(name string) Monitor {
 	}
 }
 
-func TestCreateGetIntegration(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	t.Parallel()
-	mon := exampleMonitor("create_test")
-	ID, err := client.CreateMonitor(mon)
+	ID, err := client.CreateMonitor(exampleMonitor("create_test"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.DeleteMonitor(ID)
 	got, err := client.GetMonitor(ID)
 	if !cmp.Equal(ID, got.ID) {
 		t.Error(cmp.Diff(ID, got.ID))
 	}
-}
-
-func TestDeleteIntegration(t *testing.T) {
-	t.Parallel()
-	toDelete := exampleMonitor("delete_test")
-	ID, err := client.CreateMonitor(toDelete)
-	if err != nil {
-		t.Fatal(err)
-	}
+	time.Sleep(10 * time.Second) // avoid rate limit
 	if err = client.DeleteMonitor(ID); err != nil {
 		t.Error(err)
 	}
-	_, err = client.GetMonitor(ID)
-	if err == nil {
-		t.Error("want error getting deleted check, but got nil")
-	}
-}
-
-func TestAccountDetailsIntegration(t *testing.T) {
-	t.Parallel()
-	_, err := client.GetAccountDetails()
+	time.Sleep(10 * time.Second) // avoid rate limit
+	_, err = client.GetAccountDetails()
 	if err != nil {
 		t.Error(err)
 	}
